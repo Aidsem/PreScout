@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true
     },
@@ -20,6 +20,24 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-status-bar",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow ResQMesh to use your location so emergency reports include the exact incident position."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow ResQMesh to attach photos to emergency reports.",
+          "cameraPermission": "Allow ResQMesh to take photos for emergency reports.",
+          "microphonePermission": false
+        }
+      ],
+      "react-native-maps"
+    ]
   }
 }
