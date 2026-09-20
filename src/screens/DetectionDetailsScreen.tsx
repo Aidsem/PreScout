@@ -67,7 +67,7 @@ export const DetectionDetailsScreen: React.FC<{ navigation: any }> = ({ navigati
         }
       }, 2000);
     } catch (error) {
-      appendLog('SYS', `Failed to copy coordinates: ${error instanceof Error ? error.message : String(error)}`, 'error');
+      appendLog('SYS', `Failed to copy coordinates: ${error instanceof Error ? error.message : String(error)}`, 'warning');
       setCopied(false);
     }
   };

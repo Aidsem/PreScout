@@ -23,6 +23,7 @@ interface OpenRouteMapProps {
   robotRoute?: RouteCoordinate[];
   dronePosition?: MapPoint;
   roverPosition?: MapPoint;
+  showCenters?: boolean;
 }
 
 const markerCoordinates: Record<MarkerType, RouteCoordinate> = {
