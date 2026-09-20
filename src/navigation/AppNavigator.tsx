@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '../theme/colors';
+import type { RootStackParamList, MainTabParamList } from '../types/navigation';
 
 // Screens
 import { SplashScreen } from '../screens/SplashScreen';
@@ -17,8 +18,8 @@ import { MissionPlanningScreen } from '../screens/MissionPlanningScreen';
 import { MissionHistoryScreen } from '../screens/MissionHistoryScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 
-const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator<MainTabParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const BottomTabNavigator = () => {
   return (

@@ -4,8 +4,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing } from '../theme/colors';
 import { TacticalHeader, TacticalBadge } from '../components/TacticalComponents';
 import { useTactical } from '../context/TacticalContext';
+import type { RootStackScreenProps } from '../types/navigation';
 
-export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const ProfileScreen: React.FC<RootStackScreenProps<'Profile'>> = ({ navigation }) => {
   const { assets, activeMissionCount, activeAlertCount } = useTactical();
   const drones = assets.filter((asset) => asset.type === 'drone');
   const rovers = assets.filter((asset) => asset.type === 'rover');

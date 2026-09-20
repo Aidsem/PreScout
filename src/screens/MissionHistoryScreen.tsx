@@ -16,8 +16,9 @@ import { Colors, Spacing } from '../theme/colors';
 import { TacticalHeader, TacticalBadge } from '../components/TacticalComponents';
 import { useTactical } from '../context/TacticalContext';
 import { MissionHistoryItem } from '../types';
+import type { MainTabScreenProps } from '../types/navigation';
 
-export const MissionHistoryScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const MissionHistoryScreen: React.FC<MainTabScreenProps<'HistoryTab'>> = ({ navigation }) => {
   const { missionHistory } = useTactical();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('All');

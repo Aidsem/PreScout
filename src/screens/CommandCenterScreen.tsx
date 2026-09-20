@@ -14,8 +14,9 @@ import { TacticalHeader, TacticalBadge, TacticalMetricCard } from '../components
 import { useTactical } from '../context/TacticalContext';
 import { Incident } from '../types';
 import { openScreen } from '../navigation/openScreen';
+import type { MainTabScreenProps } from '../types/navigation';
 
-export const CommandCenterScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const CommandCenterScreen: React.FC<MainTabScreenProps<'CommandTab'>> = ({ navigation }) => {
   const { incidents, activeMissionCount, onlineAssetCount, activeAlertCount } = useTactical();
 
   const handleCreateIncident = () => {

@@ -19,6 +19,7 @@ import { TacticalHeader, TacticalButton } from '../components/TacticalComponents
 import { useTactical } from '../context/TacticalContext';
 import { IncidentPriority, IncidentType } from '../types';
 import { openScreen } from '../navigation/openScreen';
+import type { RootStackScreenProps } from '../types/navigation';
 
 interface PlaceSuggestion {
   place_id: string;
@@ -45,7 +46,7 @@ interface PhotonResponse {
   features?: PhotonFeature[];
 }
 
-export const CreateIncidentScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const CreateIncidentScreen: React.FC<RootStackScreenProps<'CreateIncident'>> = ({ navigation }) => {
   const { dispatchIncident } = useTactical();
 
   const [title, setTitle] = useState('');

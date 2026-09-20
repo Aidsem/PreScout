@@ -15,8 +15,9 @@ import { Colors, Spacing } from '../theme/colors';
 import { TacticalHeader, TacticalButton } from '../components/TacticalComponents';
 import { useTactical } from '../context/TacticalContext';
 import { openScreen } from '../navigation/openScreen';
+import type { MainTabScreenProps } from '../types/navigation';
 
-export const MissionPlanningScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const MissionPlanningScreen: React.FC<MainTabScreenProps<'MissionsTab'>> = ({ navigation }) => {
   const { missionParams, assets, updateMissionParams, startFlightSimulation } = useTactical();
 
   const [geofence, setGeofence] = useState(missionParams.geofenceEnabled);

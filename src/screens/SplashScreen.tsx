@@ -9,8 +9,9 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '../theme/colors';
+import type { RootStackScreenProps } from '../types/navigation';
 
-export const SplashScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const SplashScreen: React.FC<RootStackScreenProps<'Splash'>> = ({ navigation }) => {
   const [progress, setProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState('ESTABLISHING SECURE UPLINK...');
   const progressAnim = useRef(new Animated.Value(0));
