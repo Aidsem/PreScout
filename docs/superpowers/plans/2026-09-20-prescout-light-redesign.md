@@ -875,3 +875,83 @@ The last test pins the lane count/radius relationship: with `side=0.003` and 8 l
 - [ ] **Step 2: Implement** `scanPlan.ts` per the interface (pure, no React). Default `lanes = 8`.
 - [ ] **Step 3: Wire LiveMapScreen** — replace the perimeter `route` array with `const outline = scanOutline(center, side); const sweep = buildSweepRoute(center, side);` store `scanRoute = sweep` for travel and pass `scanOutline={outline}` to `OpenRouteMap` for the polygon overlay (add the optional `scanOutline?: RouteCoordinate[]` prop to `OpenRouteMap.d.ts`, `.native.tsx` (draw the polygon from `scanOutline`, the polyline of `scanRoute` as a thin dashed `MapColors.droneRoute` line), and `.web.tsx`). Replace the reveal effect: on every `scanTravel.position` change, `const hits = detectAlongRoute(scanTravel.position, pendingScanPeople, DETECTION_RADIUS_DEG, detectedIds)`; append hits to `detectedPeople` and log each as today. `usePathTravel`/`useRouteTravel` already expose the interpolated `position`; if the scan hook only exposes `progress`, derive position by linear interpolation along `scanRoute` at `progress` (add a pure `positionAlong(route, progress)` to `src/utils/pathMotion.ts` with a unit test).
 - [ ] **Step 4: Gates + web export + commit** `feat(map): lawnmower drone sweep with proximity-based detections`.
+
+---
+
+## Amendment 2 tasks (after Task 2B; see spec Amendment 2)
+
+### Task 2C: Nearest-unit dispatch on the Live Map
+
+**Files:** Modify `src/screens/LiveMapScreen.tsx` (`computeRoutes` ~lines 268-345, HUD unit names); create `src/dispatch/nearestUnits.ts`, `src/dispatch/__tests__/nearestUnits.test.ts`.
+
+**Interfaces (produced):**
+```ts
+export function nearestAvailable(assets: FleetAsset[], type: AssetType, destination: RouteCoordinate): FleetAsset | undefined;
+export function pickDispatchUnits(assets: FleetAsset[], destination: RouteCoordinate): { drone?: FleetAsset; rover?: FleetAsset };
+```
+Both use `distanceBetween` from `src/dispatch/stations.ts` (same metric as `dispatchIncident`).
+
+- [ ] **Step 1: Failing test** `nearestUnits.test.ts`:
+```ts
+import { pickDispatchUnits } from '../nearestUnits';
+import { FleetAsset } from '../../types';
+
+const base: Omit<FleetAsset, 'id' | 'name' | 'type' | 'status' | 'homeCoordinates'> = {
+  subType: 'x', battery: 90, signal: 'Strong', payload: 'p', stationId: 's', stationName: 'S',
+};
+const assets: FleetAsset[] = [
+  { ...base, id: 'drone-01', name: 'DRONE-01', type: 'drone', status: 'AVAILABLE', homeCoordinates: { lat: 18.60, lng: 73.90 } },
+  { ...base, id: 'drone-07', name: 'DRONE-07', type: 'drone', status: 'AVAILABLE', homeCoordinates: { lat: 18.52, lng: 73.85 } },
+  { ...base, id: 'drone-02', name: 'DRONE-02', type: 'drone', status: 'ON MISSION', homeCoordinates: { lat: 18.521, lng: 73.851 } },
+  { ...base, id: 'rover-01', name: 'ROVER-01', type: 'rover', status: 'AVAILABLE', homeCoordinates: { lat: 18.70, lng: 73.95 } },
+  { ...base, id: 'rover-05', name: 'ROVER-05', type: 'rover', status: 'CHARGING', homeCoordinates: { lat: 18.52, lng: 73.85 } },
+  { ...base, id: 'rover-09', name: 'ROVER-09', type: 'rover', status: 'AVAILABLE', homeCoordinates: { lat: 18.53, lng: 73.86 } },
+];
+
+it('picks the nearest AVAILABLE drone and rover, never the defaults or busy units', () => {
+  const picked = pickDispatchUnits(assets, { latitude: 18.52, longitude: 73.85 });
+  expect(picked.drone?.id).toBe('drone-07');
+  expect(picked.rover?.id).toBe('rover-09');
+});
+it('returns undefined when no unit of a type is available', () => {
+  const picked = pickDispatchUnits(assets.filter((a) => a.type !== 'rover'), { latitude: 18.52, longitude: 73.85 });
+  expect(picked.rover).toBeUndefined();
+});
+```
+- [ ] **Step 2: Implement + wire** — in `computeRoutes`, delete the `selectedDrone`/`selectedRover` lookups and the inline sort blocks; `const picked = pickDispatchUnits(assets, destination)`; `droneOrigin = origins?.drone ?? home(picked.drone) ?? issueCoordinates.drone` (same for rover). Store `activeUnits = { droneName, roverName }` in state (from `origins`-providing callers — `latestDispatch.drone/rover`, `missionAssignment` — or from `picked`) and use those names in the HUD "units deployed" list and in the `appendLog` route message instead of `missionParams.*UnitId`. Leave `missionParams` untouched (Mission Planning still uses it to build `missionAssignment`).
+- [ ] **Step 3: Gates + commit** `fix(map): route the nearest available drone and rover, not the defaults`.
+
+### Task 2D: Thermal human figure — map markers and detection video
+
+**Files:** Create `src/ui/ThermalFigure.tsx`, `src/ui/__tests__/ThermalFigure.test.tsx`, `src/ui/thermalFigureSvg.ts` (pure string builder for the Leaflet marker); modify `src/components/ThermalDetectionVideo.tsx`, `src/components/OpenRouteMap.native.tsx` (detected-people markers), `src/components/OpenRouteMap.web.tsx` (detected-people markers), `src/ui/index.ts`.
+
+**Interfaces (produced):**
+```ts
+export const ThermalFigure: React.FC<{ size?: number; animated?: boolean; testID?: string }>; // react-native-svg
+export function thermalFigureSvgMarkup(size: number): string; // standalone <svg> string with the same gradient + silhouette, for the WebView divIcon
+export const THERMAL_STOPS: ReadonlyArray<{ offset: string; color: string }>; // ['#FFFFFF','#FFF3B0','#FFC53D','#F76707','#C92A2A','#4A0A0A'] at 0/18/40/62/82/100 %
+```
+- [ ] **Step 1: Failing tests**
+```tsx
+import React from 'react';
+import { render, screen } from '@testing-library/react-native';
+import { ThermalFigure, THERMAL_STOPS } from '../ThermalFigure';
+import { thermalFigureSvgMarkup } from '../thermalFigureSvg';
+
+it('renders an accessible thermal figure', () => {
+  render(<ThermalFigure testID="fig" />);
+  expect(screen.getByTestId('fig').props.accessibilityLabel).toBe('Thermal human signature');
+});
+it('gradient runs from white-hot to dark red', () => {
+  expect(THERMAL_STOPS[0].color).toBe('#FFFFFF');
+  expect(THERMAL_STOPS[THERMAL_STOPS.length - 1].color).toBe('#4A0A0A');
+});
+it('markup is a self-contained svg with the silhouette and gradient', () => {
+  const svg = thermalFigureSvgMarkup(26);
+  expect(svg.startsWith('<svg')).toBe(true);
+  expect(svg).toContain('radialGradient');
+  expect(svg).toContain('width="26"');
+});
+```
+- [ ] **Step 2: Implement** — silhouette path (viewBox 0 0 64 96): head circle (32,16 r 10), torso rounded rect (20,28 → 44,62, r 8), two arms (paths from shoulders to ~y 60, slightly out), two legs (paths from hips to y 92). Fill with `RadialGradient` centred on the chest (cx 32 cy 40, r 46) using `THERMAL_STOPS`; behind it a soft halo `Circle` (r 40, fill `#F76707`, opacity 0.22) and an outer `Circle` (r 48, fill `#C92A2A`, opacity 0.12). `animated` (default true, honour `useReducedMotion`) breathes the halo opacity 0.14↔0.28 and scales the figure 1↔1.03 with Reanimated `withRepeat`. `thermalFigureSvgMarkup` builds the identical shapes as an inline `<svg>` string (no animation). Map: native `peopleLayer` `divIcon` html → `thermalFigureSvgMarkup(26)` inside a div with `filter: drop-shadow(0 0 6px #F76707)`; web `detectedDot` → `<ThermalFigure size={26} animated={false} />` with the same drop shadow via `Shadows`. `ThermalDetectionVideo`: replace the abstract blob with `<ThermalFigure size={Math.min(width, height) * 0.7} />` on a near-black (`#0A0806`) canvas with a faint thermal gradient background, scan line + crosshair + "FLIR" HUD text kept, palette bar at the bottom showing `THERMAL_STOPS`. Keep the component's existing props.
+- [ ] **Step 3: Gates + web export + commit** `feat(thermal): realistic thermal human signature on map and detection video`.

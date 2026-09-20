@@ -208,3 +208,20 @@ User feedback while running the light build added two requirements:
   `src/map/scanPlan.ts` gains `buildSweepRoute(center, side, lanes)` and
   `detectAlongRoute(position, people, radiusDeg)`; `revealedCount` is
   removed. The scan polygon outline still renders as the search-grid overlay.
+
+## Amendment 2 (2026-09-20, during execution)
+
+- **Thermal human signatures.** Detected people must look like real thermal
+  imagery, not dots. A `ThermalFigure` SVG primitive renders a human silhouette
+  with a radial heat gradient (white-hot core → yellow → orange → red → dark
+  halo) and a subtle breathing/shimmer animation. It is used (a) on the map
+  as the detected-person marker on both platforms (≈26 px, halo glow), and
+  (b) full-size inside `ThermalDetectionVideo`, replacing the current abstract
+  blob, for Live Monitoring and Detection Details.
+- **Nearest-unit dispatch on the map.** When a mission/route is raised, the
+  units that move must be the nearest *available* drone and rover to the
+  destination (the same rule `dispatchIncident` already applies), not the
+  `missionParams` defaults (`drone-01`/`rover-01`). Explicit origins from a
+  dispatch result or a Mission Planning `missionAssignment` still win; the
+  `missionParams.droneUnitId/roverUnitId` fallback is removed from the map.
+  The HUD names the units that actually moved.
