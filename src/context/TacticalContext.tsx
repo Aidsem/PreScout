@@ -364,17 +364,8 @@ export const TacticalProvider: React.FC<TacticalProviderProps> = ({
 
   // Persist the durable record (debounced) once hydrated. Telemetry, mission
   // params and dispatch previews are per-session and intentionally excluded.
-  // The run that merely observes hydration completing is skipped: writing the
-  // just-restored (or untouched baseline) state back out immediately would
-  // race the very next real change under a zero-delay debounce, since the
-  // first write's timer can fire before the second one is even scheduled.
-  const skipNextPersistRef = useRef(true);
   useEffect(() => {
     if (!hydrated) return;
-    if (skipNextPersistRef.current) {
-      skipNextPersistRef.current = false;
-      return;
-    }
     const payload = serializeSnapshot({
       incidents,
       alerts,

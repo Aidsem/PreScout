@@ -60,11 +60,13 @@ describe('TacticalProvider persistence', () => {
       });
     });
 
-    await waitFor(() => expect(storage.dump()[STORAGE_KEY]).toBeDefined());
+    await waitFor(() => {
+      const parsed = parseSnapshot(storage.dump()[STORAGE_KEY]);
+      expect(parsed.kind).toBe('ok');
+      if (parsed.kind === 'ok') expect(parsed.snapshot.incidents[0].title).toBe('Persist me');
+    });
     const parsed = parseSnapshot(storage.dump()[STORAGE_KEY]);
-    expect(parsed.kind).toBe('ok');
     if (parsed.kind === 'ok') {
-      expect(parsed.snapshot.incidents[0].title).toBe('Persist me');
       expect(Object.values(parsed.snapshot.assetAssignments).some((a) => a.assignedIncidentId === parsed.snapshot.incidents[0].id)).toBe(true);
     }
   });
