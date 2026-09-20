@@ -28,6 +28,7 @@ interface TacticalContextType {
   telemetry: TelemetryState;
   logs: SystemLog[];
   missionHistory: MissionHistoryItem[];
+  recordMission: (record: Omit<MissionHistoryItem, 'id'>) => MissionHistoryItem;
   missionParams: MissionParameters;
   addIncident: (incident: Omit<Incident, 'id' | 'timestamp'>) => void;
   dispatchIncident: (incident: Omit<Incident, 'id' | 'timestamp'>) => DispatchResult;
@@ -262,7 +263,7 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [assets, setAssets] = useState<FleetAsset[]>(initialAssets);
   const [alerts, setAlerts] = useState<DetectionAlert[]>(initialAlerts);
   const [logs, setLogs] = useState<SystemLog[]>(initialLogs);
-  const [missionHistory] = useState<MissionHistoryItem[]>(initialHistory);
+  const [missionHistory, setMissionHistory] = useState<MissionHistoryItem[]>(initialHistory);
 
   const [telemetry, setTelemetry] = useState<TelemetryState>({
     altitude: 120,
@@ -455,6 +456,13 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setLogs((l) => [newLog, ...l]);
   };
 
+  const recordMission = (record: Omit<MissionHistoryItem, 'id'>): MissionHistoryItem => {
+    const entry: MissionHistoryItem = { ...record, id: nextId('hist') };
+    setMissionHistory((prev) => [entry, ...prev]);
+    appendLog('SYS', `${entry.code} ${entry.status.toLowerCase()}: ${entry.title} (${entry.duration}).`, 'info');
+    return entry;
+  };
+
   const updateMissionParams = (params: Partial<MissionParameters>) => {
     setMissionParams((prev) => ({ ...prev, ...params }));
   };
@@ -493,6 +501,7 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         telemetry,
         logs,
         missionHistory,
+        recordMission,
         missionParams,
         addIncident,
         dispatchIncident,

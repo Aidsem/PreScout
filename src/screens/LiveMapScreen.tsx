@@ -36,6 +36,8 @@ import {
 } from "../map/projection";
 import { resolveDestination } from "../map/resolveDestination";
 import { placeScanPeople, resolvePeopleCount, revealedCount } from "../map/scanPlan";
+import { buildMissionRecord } from "../map/missionRecord";
+import type { MissionHistoryItem } from "../types";
 import type { MainTabScreenProps } from "../types/navigation";
 
 const issueCoordinates: Record<MarkerType, RouteCoordinate> = {
@@ -97,6 +99,8 @@ export const LiveMapScreen: React.FC<MainTabScreenProps<"LiveMap">> = ({
     dispatchIncident,
     latestDispatch,
     appendLog,
+    missionHistory,
+    recordMission,
   } = useTactical();
   const [selectedMarker, setSelectedMarker] = useState<MarkerType>("drone");
   const [routing, setRouting] = useState(false);
@@ -153,6 +157,35 @@ export const LiveMapScreen: React.FC<MainTabScreenProps<"LiveMap">> = ({
     simulating &&
     (scanRoute ? scanTravel.arrived : droneTravel.arrived) &&
     roverTravel.arrived;
+
+  const missionStartRef = useRef<number | undefined>(undefined);
+  const missionRecordedRef = useRef(false);
+  const closeMission = (status: MissionHistoryItem["status"]) => {
+    if (missionRecordedRef.current || missionStartRef.current === undefined) return;
+    missionRecordedRef.current = true;
+    recordMission(
+      buildMissionRecord({
+        sequence: missionHistory.length + 1,
+        title: activeIncident?.title ?? `${missionParams.type} mission`,
+        incidentType: activeIncident?.type,
+        location: activeIncident?.location ?? "Sector response point",
+        coordinates: activeIncident?.coordinates ?? {
+          lat: incidentCoordinate?.latitude ?? issueCoordinates.person.latitude,
+          lng: incidentCoordinate?.longitude ?? issueCoordinates.person.longitude,
+        },
+        droneCount: droneRoute ? 1 : 0,
+        roverCount: robotRoute ? 1 : 0,
+        startedAt: missionStartRef.current,
+        endedAt: Date.now(),
+        status,
+      }),
+    );
+  };
+
+  useEffect(() => {
+    if (bothArrived) closeMission("COMPLETED");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bothArrived]);
 
   useEffect(() => {
     if (
@@ -378,7 +411,11 @@ export const LiveMapScreen: React.FC<MainTabScreenProps<"LiveMap">> = ({
         ),
       );
     }
-    if (shouldSimulate) setSimulating(true);
+    if (shouldSimulate) {
+      missionStartRef.current = Date.now();
+      missionRecordedRef.current = false;
+      setSimulating(true);
+    }
   };
 
   useEffect(() => {
@@ -591,6 +628,7 @@ export const LiveMapScreen: React.FC<MainTabScreenProps<"LiveMap">> = ({
   };
 
   const handleReset = () => {
+    if (simulating) closeMission("ABORTED");
     setRouting(false);
     setSimulating(false);
     setScanStarted(false);
