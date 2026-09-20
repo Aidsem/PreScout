@@ -71,7 +71,12 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
 
   return (
     <View style={styles.root}>
-      <iframe title="ResQMesh operations map" src={iframeSource} loading="lazy" style={styles.webMap} pointerEvents="none" />
+      <iframe
+        title="ResQMesh operations map"
+        src={iframeSource}
+        loading="lazy"
+        style={{ ...styles.webMap, pointerEvents: 'none' }}
+      />
       {scanRoute && scanRoute.length > 1 && (
         <Svg pointerEvents="none" style={styles.scanOverlay} viewBox="0 0 100 100">
           <Polygon

@@ -36,6 +36,7 @@ import {
 } from "../map/projection";
 import { resolveDestination } from "../map/resolveDestination";
 import { placeScanPeople, resolvePeopleCount, revealedCount } from "../map/scanPlan";
+import type { MainTabScreenProps } from "../types/navigation";
 
 const issueCoordinates: Record<MarkerType, RouteCoordinate> = {
   drone: { latitude: 18.5324, longitude: 73.8464 },
@@ -83,7 +84,7 @@ function buildRoadFallbackRoute(
     : roadWaypoints;
 }
 
-export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
+export const LiveMapScreen: React.FC<MainTabScreenProps<"LiveMap">> = ({
   navigation,
   route,
 }) => {

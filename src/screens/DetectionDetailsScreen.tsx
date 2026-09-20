@@ -16,6 +16,7 @@ import { TacticalHeader, TacticalButton } from '../components/TacticalComponents
 import { useTactical } from '../context/TacticalContext';
 import { openScreen } from '../navigation/openScreen';
 import { ThermalDetectionVideo } from '../components/ThermalDetectionVideo';
+import type { RootStackScreenProps } from '../types/navigation';
 
 function parseDetectionCoordinates(value?: string) {
   if (!value) return undefined;
@@ -30,9 +31,12 @@ function parseDetectionCoordinates(value?: string) {
   return { latitude, longitude };
 }
 
-export const DetectionDetailsScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const DetectionDetailsScreen: React.FC<RootStackScreenProps<'DetectionDetails'>> = ({
+  navigation,
+  route,
+}) => {
   const { alerts, resolveAlert, appendLog } = useTactical();
-  const { alertId } = navigation.params;
+  const { alertId } = route.params ?? {};
   const alertItem = alerts.find((alert) => alert.id === alertId) || alerts[0];
   const [isResolved, setIsResolved] = useState(alertItem?.status === 'RESOLVED');
   const [copied, setCopied] = useState(false);
@@ -67,7 +71,7 @@ export const DetectionDetailsScreen: React.FC<{ navigation: any }> = ({ navigati
         }
       }, 2000);
     } catch (error) {
-      appendLog('SYS', `Failed to copy coordinates: ${error instanceof Error ? error.message : String(error)}`, 'error');
+      appendLog('SYS', `Failed to copy coordinates: ${error instanceof Error ? error.message : String(error)}`, 'warning');
       setCopied(false);
     }
   };

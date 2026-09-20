@@ -13,8 +13,9 @@ import { Colors, Spacing } from '../theme/colors';
 import { TacticalHeader, TacticalBadge } from '../components/TacticalComponents';
 import { useTactical } from '../context/TacticalContext';
 import { FleetAsset } from '../types';
+import type { MainTabScreenProps } from '../types/navigation';
 
-export const AssetSelectionScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const AssetSelectionScreen: React.FC<MainTabScreenProps<'AssetsTab'>> = ({ navigation }) => {
   const { assets, assignAsset } = useTactical();
   const [filter, setFilter] = useState<'all' | 'drones' | 'rovers' | 'available'>('all');
 

@@ -26,6 +26,7 @@ interface OpenRouteMapProps {
   dronePosition?: MapPoint;
   roverPosition?: MapPoint;
   projection?: MapProjection;
+  showCenters?: boolean;
 }
 
 const markerCoordinates: Record<MarkerType, RouteCoordinate> = {

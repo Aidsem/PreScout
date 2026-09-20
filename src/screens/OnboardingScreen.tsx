@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing } from '../theme/colors';
+import type { RootStackScreenProps } from '../types/navigation';
 
 const { width } = Dimensions.get('window');
 
@@ -52,7 +53,7 @@ const slides: Slide[] = [
   },
 ];
 
-export const OnboardingScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const OnboardingScreen: React.FC<RootStackScreenProps<'Onboarding'>> = ({ navigation }) => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   const handleNext = () => {

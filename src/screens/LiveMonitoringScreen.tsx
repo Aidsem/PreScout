@@ -15,10 +15,11 @@ import { TacticalHeader, CrosshairReticle } from '../components/TacticalComponen
 import { useTactical } from '../context/TacticalContext';
 import { openScreen } from '../navigation/openScreen';
 import { ThermalDetectionVideo } from '../components/ThermalDetectionVideo';
+import type { RootStackScreenProps } from '../types/navigation';
 
 const { width } = Dimensions.get('window');
 
-export const LiveMonitoringScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const LiveMonitoringScreen: React.FC<RootStackScreenProps<'LiveMonitoring'>> = ({ navigation }) => {
   const { telemetry, toggleCameraMode, logs, alerts, appendLog } = useTactical();
   const [escalated, setEscalated] = useState(false);
 
