@@ -26,6 +26,7 @@ export const Card: React.FC<CardProps> = ({ children, pressable, onPress, style,
     <Animated.View style={[animated, style]}>
       <Pressable
         testID={testID}
+        accessibilityRole="button"
         onPress={onPress}
         onPressIn={() => { setPressed(true); press(0.98); }}
         onPressOut={() => { setPressed(false); press(1); }}

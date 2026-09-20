@@ -16,7 +16,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({ eyebrow, title, ac
         <Text style={styles.title}>{title}</Text>
       </View>
       {action ? (
-        <Pressable onPress={action.onPress} hitSlop={8}>
+        <Pressable onPress={action.onPress} accessibilityRole="button" hitSlop={8}>
           <Text style={styles.action}>{action.label}</Text>
         </Pressable>
       ) : null}

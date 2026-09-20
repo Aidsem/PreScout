@@ -2,7 +2,8 @@ import React from 'react';
 import { View, StyleSheet, Text, Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Polygon, Polyline } from 'react-native-svg';
-import { Colors } from '../theme/colors';
+import { Colors, MapColors } from '../theme/colors';
+import { Shadows } from '../theme/shadows';
 import { MAP_MARKERS, MarkerType, MapPoint } from '../map/mapModel';
 import { RouteCoordinate } from '../services/openRouteService';
 import { DEFAULT_BOUNDS, MapProjection, projectionFromBounds } from '../map/projection';
@@ -37,10 +38,10 @@ const markerCoordinates: Record<MarkerType, RouteCoordinate> = {
   rover: { latitude: 18.4974, longitude: 73.8427 },
 };
 const markerColors: Record<MarkerType, string> = {
-  drone: Colors.tertiary,
-  hazard: Colors.error,
-  person: Colors.warning,
-  rover: Colors.primary,
+  drone: MapColors.drone,
+  hazard: MapColors.hazard,
+  person: MapColors.person,
+  rover: MapColors.rover,
 };
 
 export const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
@@ -105,7 +106,7 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
               .map((point) => `${((point.longitude - bounds.west) / (bounds.east - bounds.west)) * 100},${((bounds.north - point.latitude) / (bounds.north - bounds.south)) * 100}`)
               .join(' ')}
             fill="none"
-            stroke={Colors.tertiary}
+            stroke={MapColors.droneRoute}
             strokeWidth="1.2"
             strokeDasharray="5 4"
           />
@@ -118,7 +119,7 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
               .map((point) => `${((point.longitude - bounds.west) / (bounds.east - bounds.west)) * 100},${((bounds.north - point.latitude) / (bounds.north - bounds.south)) * 100}`)
               .join(' ')}
             fill="none"
-            stroke="#FBBF24"
+            stroke={MapColors.roverRoute}
             strokeWidth="1.3"
             strokeDasharray="2 2"
           />
@@ -169,17 +170,17 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
           latitude: asset.homeCoordinates.lat,
           longitude: asset.homeCoordinates.lng,
         };
-        const color = asset.type === 'drone' ? Colors.tertiary : Colors.primary;
+        const color = asset.type === 'drone' ? MapColors.drone : MapColors.rover;
         return (
           <View key={asset.id} pointerEvents="none" style={[styles.fleetMarker, markerPosition(coordinate)]}>
-            <View style={[styles.fleetDot, { borderColor: color, backgroundColor: `${color}55` }]}>
+            <View style={[styles.fleetDot, Shadows.elevation1, { borderColor: '#FFFFFF', backgroundColor: color }]}>
               <MaterialCommunityIcons
                 name={asset.type === 'drone' ? 'drone' : 'robot-industrial'}
                 size={10}
-                color={color}
+                color={Colors.onAccent}
               />
             </View>
-            <Text style={[styles.fleetLabel, { color }]}>{asset.name}</Text>
+            <Text style={[styles.fleetLabel, { color: MapColors.labelText, borderColor: color }]}>{asset.name}</Text>
           </View>
         );
       })}
@@ -188,11 +189,11 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
           latitude: station.coordinates.lat,
           longitude: station.coordinates.lng,
         })]}>
-          <View style={[styles.stationIcon, { borderColor: station.type === 'fire' ? Colors.error : Colors.primary }]}>
+          <View style={[styles.stationIcon, { borderColor: station.type === 'fire' ? MapColors.fireStation : MapColors.policeStation }]}>
             <MaterialCommunityIcons
               name={station.type === 'fire' ? 'fire-truck' : 'police-station'}
               size={12}
-              color={station.type === 'fire' ? Colors.error : Colors.primary}
+              color={station.type === 'fire' ? MapColors.fireStation : MapColors.policeStation}
             />
           </View>
           <Text style={styles.stationLabel}>{station.name.replace(' Fire Brigade', '').replace(' Police Station', '')}</Text>
@@ -203,8 +204,8 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
           latitude: hospital.coordinates.lat,
           longitude: hospital.coordinates.lng,
         })]}>
-          <View style={styles.hospitalIcon}>
-            <MaterialCommunityIcons name="hospital-box-outline" size={12} color={Colors.white} />
+          <View style={[styles.hospitalIcon, { borderColor: MapColors.hospital }]}>
+            <MaterialCommunityIcons name="hospital-box-outline" size={12} color={MapColors.hospital} />
           </View>
           <Text style={styles.stationLabel}>{hospital.name.replace(' Hospital', '')}</Text>
         </View>
@@ -223,23 +224,23 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, overflow: 'hidden', backgroundColor: Colors.surfaceContainerLowest },
+  root: { flex: 1, overflow: 'hidden', backgroundColor: MapColors.canvas },
   webMap: { width: '100%', height: '100%', borderWidth: 0 },
   scanOverlay: { ...StyleSheet.absoluteFill, zIndex: 2 },
   webMarker: { position: 'absolute', alignItems: 'center', transform: [{ translateX: -20 }, { translateY: -20 }] },
   marker: {
-    width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(11, 13, 12, 0.94)',
+    width: 38, height: 38, borderRadius: 12, backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderWidth: 2, alignItems: 'center', justifyContent: 'center',
   },
-  markerSelected: { shadowColor: Colors.tertiary, shadowOpacity: 0.8, shadowRadius: 10, elevation: 8 },
+  markerSelected: { shadowColor: MapColors.drone, shadowOpacity: 0.8, shadowRadius: 10, elevation: 8 },
   markerLabel: {
-    marginTop: 4, backgroundColor: 'rgba(11, 13, 12, 0.9)', borderWidth: 1, borderRadius: 5,
+    marginTop: 4, backgroundColor: 'rgba(255, 255, 255, 0.92)', borderWidth: 1, borderRadius: 5,
     paddingHorizontal: 5, paddingVertical: 2,
   },
   markerLabelText: { fontSize: 8, fontWeight: '700', letterSpacing: 0.5 },
   detectedMarker: { position: 'absolute', alignItems: 'center', transform: [{ translateX: -9 }, { translateY: -9 }], zIndex: 4 },
-  detectedDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: Colors.warning, backgroundColor: Colors.error },
-  detectedLabel: { marginTop: 2, color: Colors.warning, fontSize: 8, fontWeight: '700' },
+  detectedDot: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: MapColors.person, backgroundColor: `${MapColors.person}33` },
+  detectedLabel: { marginTop: 2, color: MapColors.person, fontSize: 8, fontWeight: '700' },
   fleetMarker: {
     position: 'absolute',
     alignItems: 'center',
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 7,
-    borderWidth: 1,
+    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -259,7 +260,9 @@ const styles = StyleSheet.create({
     fontSize: 6,
     fontFamily: 'Courier',
     fontWeight: '700',
-    backgroundColor: 'rgba(11, 13, 12, 0.78)',
+    backgroundColor: MapColors.labelBg,
+    borderWidth: 1,
+    borderRadius: 4,
     paddingHorizontal: 2,
   },
   stationMarker: {
@@ -273,8 +276,8 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 7,
-    borderWidth: 1,
-    backgroundColor: 'rgba(11, 13, 12, 0.9)',
+    borderWidth: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -282,9 +285,8 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 7,
-    borderWidth: 1,
-    borderColor: Colors.white,
-    backgroundColor: 'rgba(11, 13, 12, 0.9)',
+    borderWidth: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -294,7 +296,7 @@ const styles = StyleSheet.create({
     fontSize: 6,
     fontFamily: 'Courier',
     fontWeight: '700',
-    backgroundColor: 'rgba(11, 13, 12, 0.82)',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     paddingHorizontal: 2,
   },
   focusMarker: {
@@ -308,13 +310,13 @@ const styles = StyleSheet.create({
     height: 76,
     borderRadius: 38,
     borderWidth: 2,
-    borderColor: Colors.warning,
-    backgroundColor: `${Colors.warning}12`,
+    borderColor: MapColors.person,
+    backgroundColor: `${MapColors.person}12`,
   },
   focusLabel: {
     marginTop: 4,
-    color: Colors.warning,
-    backgroundColor: 'rgba(11, 13, 12, 0.92)',
+    color: MapColors.person,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     paddingHorizontal: 5,
     paddingVertical: 2,
     fontSize: 8,
@@ -322,10 +324,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   incidentArea: { position: 'absolute', alignItems: 'center', transform: [{ translateX: -34 }, { translateY: -34 }], zIndex: 3 },
-  incidentAreaRing: { width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: Colors.error, backgroundColor: `${Colors.error}22` },
-  incidentAreaLabel: { marginTop: 2, color: Colors.error, fontSize: 8, fontWeight: '700' },
+  incidentAreaRing: { width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: MapColors.incident, backgroundColor: `${MapColors.incident}22` },
+  incidentAreaLabel: { marginTop: 2, color: MapColors.incident, fontSize: 8, fontWeight: '700' },
   mapNote: {
-    position: 'absolute', left: 12, bottom: 12, backgroundColor: 'rgba(11, 13, 12, 0.82)',
+    position: 'absolute', left: 12, bottom: 12, backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderRadius: 5, paddingHorizontal: 7, paddingVertical: 4,
   },
   mapNoteText: { color: Colors.onSurfaceVariant, fontSize: 8, letterSpacing: 0.6 },

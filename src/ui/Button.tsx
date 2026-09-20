@@ -17,10 +17,10 @@ interface ButtonProps {
 }
 
 const PALETTE: Record<Variant, { bg: string; fg: string; border: string }> = {
-  primary: { bg: Colors.accent, fg: Colors.white, border: Colors.accent },
+  primary: { bg: Colors.accent, fg: Colors.onAccent, border: Colors.accent },
   secondary: { bg: Colors.surface, fg: Colors.ink, border: Colors.border },
   ghost: { bg: 'transparent', fg: Colors.accent, border: 'transparent' },
-  danger: { bg: Colors.danger, fg: Colors.white, border: Colors.danger },
+  danger: { bg: Colors.danger, fg: Colors.onAccent, border: Colors.danger },
 };
 
 export const Button: React.FC<ButtonProps> = ({ label, onPress, variant = 'primary', loading, disabled, icon, fullWidth, testID }) => {

@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
   },
   targetEmpty: {
     fontSize: 11,
-    color: Colors.outline,
+    color: Colors.inkMuted,
   },
   inventorySummary: {
     flexDirection: 'row',

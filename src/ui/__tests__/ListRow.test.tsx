@@ -9,6 +9,7 @@ it('shows title, subtitle, trailing and handles press', () => {
   expect(screen.getByText('DRONE-01')).toBeTruthy();
   expect(screen.getByText('Recon')).toBeTruthy();
   expect(screen.getByText('4m')).toBeTruthy();
+  expect(screen.getByRole('button')).toBeTruthy();
   fireEvent.press(screen.getByTestId('row'));
   expect(onPress).toHaveBeenCalled();
 });

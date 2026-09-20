@@ -118,7 +118,7 @@ export const DetectionDetailsScreen: React.FC<RootStackScreenProps<'DetectionDet
           {/* Central Target Bounding Box */}
           <View style={styles.targetContainer}>
             <View style={styles.targetTag}>
-              <MaterialCommunityIcons name="account" size={10} color={Colors.white} />
+              <MaterialCommunityIcons name="account" size={10} color={Colors.onAccent} />
               <Text style={styles.targetTagText}>PERSON 94%</Text>
             </View>
             <View style={styles.targetReticleCorners} />
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontFamily: 'Courier',
     fontWeight: '800',
-    color: Colors.white,
+    color: Colors.onAccent,
   },
   targetReticleCorners: {
     width: 14,
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
   telemetryTag: {
     fontSize: 9,
     fontFamily: 'Courier',
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: Colors.inkMuted,
   },
   scanlineLaser: {
     position: 'absolute',
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   alertBannerSub: {
     fontSize: 10,
     fontFamily: 'Courier',
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: Colors.ink,
     marginTop: 2,
   },
   cardBody: {

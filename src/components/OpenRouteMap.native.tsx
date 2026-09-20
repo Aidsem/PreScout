@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
-import { Colors } from '../theme/colors';
+import { Colors, MapColors } from '../theme/colors';
 import { MAP_MARKERS, MarkerType, MapPoint } from '../map/mapModel';
 import { RouteCoordinate } from '../services/openRouteService';
 import { DEFAULT_BOUNDS, MapProjection, projectionFromBounds } from '../map/projection';
@@ -37,10 +37,10 @@ const markerCoordinates: Record<MarkerType, RouteCoordinate> = {
 };
 
 const markerColors: Record<MarkerType, string> = {
-  drone: Colors.tertiary,
-  hazard: Colors.error,
-  person: Colors.warning,
-  rover: Colors.primary,
+  drone: MapColors.drone,
+  hazard: MapColors.hazard,
+  person: MapColors.person,
+  rover: MapColors.rover,
 };
 
 const defaultProjection = projectionFromBounds(DEFAULT_BOUNDS);
@@ -63,21 +63,25 @@ type PageMessage = { type: 'ready' } | { type: 'marker'; id: string };
 // The page is built once with only static content; everything that changes at
 // runtime arrives through postMessage so the WebView never reloads mid-mission.
 function buildMapHtml() {
-  const markers = (Object.keys(MAP_MARKERS) as MarkerType[]).map((id) => {
-    const coordinate = markerCoordinates[id];
-    return {
-      id,
-      label: MAP_MARKERS[id].label,
-      latitude: coordinate.latitude,
-      longitude: coordinate.longitude,
-      color: markerColors[id],
-    };
-  });
+  // Only the live-tracked units get a selectable pin — the hazard/person
+  // entries in MAP_MARKERS are demo placeholders, not real assets.
+  const markers = (Object.keys(MAP_MARKERS) as MarkerType[])
+    .filter((id) => id !== 'hazard' && id !== 'person')
+    .map((id) => {
+      const coordinate = markerCoordinates[id];
+      return {
+        id,
+        label: MAP_MARKERS[id].label,
+        latitude: coordinate.latitude,
+        longitude: coordinate.longitude,
+        color: markerColors[id],
+      };
+    });
   const markerJson = JSON.stringify(markers);
   const stationJson = JSON.stringify(
     RESPONSE_STATIONS.map((station) => ({
       ...station,
-      color: station.type === 'fire' ? Colors.error : Colors.primary,
+      color: station.type === 'fire' ? MapColors.fireStation : MapColors.policeStation,
     }))
   );
   const hospitalJson = JSON.stringify(HOSPITAL_LOCATIONS);
@@ -92,11 +96,11 @@ function buildMapHtml() {
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-html, body, #map { margin: 0; width: 100%; height: 100%; background: #0b0d0c; }
-.leaflet-control-attribution { font-size: 9px; background: rgba(11,13,12,.8) !important; color: #a9aea4; }
-.leaflet-control-attribution a { color: #b8d86a; }
-.marker { width: 34px; height: 34px; border: 2px solid; border-radius: 11px; background: rgba(11,13,12,.94); display: grid; place-items: center; color: inherit; font: 700 16px system-ui; }
-.label { margin-top: 3px; padding: 2px 5px; border: 1px solid; border-radius: 5px; background: rgba(11,13,12,.9); white-space: nowrap; color: inherit; font: 700 9px system-ui; }
+html, body, #map { margin: 0; width: 100%; height: 100%; background: ${MapColors.canvas}; }
+.leaflet-control-attribution { font-size: 9px; background: ${MapColors.labelBg} !important; color: ${MapColors.labelText}; }
+.leaflet-control-attribution a { color: ${MapColors.rover}; }
+.marker { width: 34px; height: 34px; border: 2px solid; border-radius: 11px; background: ${MapColors.markerBg}; display: grid; place-items: center; color: inherit; font: 700 16px system-ui; }
+.label { margin-top: 3px; padding: 2px 5px; border: 1px solid; border-radius: 5px; background: ${MapColors.labelBg}; white-space: nowrap; color: inherit; font: 700 9px system-ui; }
 .pin { display: flex; flex-direction: column; align-items: center; }
 </style>
 </head>
@@ -141,7 +145,7 @@ function drawCenters(fleetAssets) {
   fleetAssets.forEach(asset => {
     const icon = L.divIcon({
       className: '',
-      html: '<div style="display:flex;flex-direction:column;align-items:center;color:' + asset.color + '"><div style="width:22px;height:22px;border:1px solid ' + asset.color + ';border-radius:7px;background:' + asset.color + '55;display:grid;place-items:center;font:700 10px system-ui">' + (asset.type === 'drone' ? '✦' : '▦') + '</div><div style="margin-top:1px;padding:1px 2px;background:rgba(11,13,12,.78);font:700 6px monospace;white-space:nowrap">' + asset.name + '</div></div>',
+      html: '<div style="display:flex;flex-direction:column;align-items:center"><div style="width:24px;height:24px;border-radius:8px;background:' + asset.color + ';color:#FFFFFF;border:2px solid #FFFFFF;box-shadow:0 1px 4px rgba(0,0,0,.25);display:grid;place-items:center;font:700 10px system-ui">' + (asset.type === 'drone' ? '✦' : '▦') + '</div><div style="margin-top:1px;padding:1px 3px;background:${MapColors.labelBg};color:${MapColors.labelText};border:1px solid ' + asset.color + ';border-radius:4px;font:700 7px monospace;white-space:nowrap">' + asset.name + '</div></div>',
       iconSize: [55, 35],
       iconAnchor: [27, 14]
     });
@@ -150,7 +154,7 @@ function drawCenters(fleetAssets) {
   responseStations.forEach(station => {
     const icon = L.divIcon({
       className: '',
-      html: '<div style="display:flex;flex-direction:column;align-items:center"><div style="width:24px;height:24px;border:1px solid ' + station.color + ';border-radius:7px;background:rgba(11,13,12,.9);display:grid;place-items:center;color:' + station.color + ';font:700 12px system-ui">' + (station.type === 'fire' ? '♨' : '✚') + '</div><div style="margin-top:1px;padding:1px 2px;background:rgba(11,13,12,.82);color:#a9aea4;font:700 6px monospace;white-space:nowrap">' + station.name.replace(' Fire Brigade', '').replace(' Police Station', '') + '</div></div>',
+      html: '<div style="display:flex;flex-direction:column;align-items:center"><div style="width:24px;height:24px;border:2px solid ' + station.color + ';border-radius:7px;background:${MapColors.markerBg};display:grid;place-items:center;color:' + station.color + ';font:700 12px system-ui">' + (station.type === 'fire' ? '♨' : '✚') + '</div><div style="margin-top:1px;padding:1px 2px;background:${MapColors.labelBg};color:${MapColors.labelText};font:700 6px monospace;white-space:nowrap">' + station.name.replace(' Fire Brigade', '').replace(' Police Station', '') + '</div></div>',
       iconSize: [58, 38],
       iconAnchor: [29, 14]
     });
@@ -159,7 +163,7 @@ function drawCenters(fleetAssets) {
   hospitals.forEach(hospital => {
     const icon = L.divIcon({
       className: '',
-      html: '<div style="display:flex;flex-direction:column;align-items:center"><div style="width:24px;height:24px;border:1px solid #f4f4ef;border-radius:7px;background:rgba(11,13,12,.9);display:grid;place-items:center;color:#f4f4ef;font:700 12px system-ui">✚</div><div style="margin-top:1px;padding:1px 2px;background:rgba(11,13,12,.82);color:#a9aea4;font:700 6px monospace;white-space:nowrap">' + hospital.name.replace(' Hospital', '') + '</div></div>',
+      html: '<div style="display:flex;flex-direction:column;align-items:center"><div style="width:24px;height:24px;border:2px solid ${MapColors.hospital};border-radius:7px;background:${MapColors.markerBg};display:grid;place-items:center;color:${MapColors.hospital};font:700 12px system-ui">✚</div><div style="margin-top:1px;padding:1px 2px;background:${MapColors.labelBg};color:${MapColors.labelText};font:700 6px monospace;white-space:nowrap">' + hospital.name.replace(' Hospital', '') + '</div></div>',
       iconSize: [58, 38],
       iconAnchor: [29, 14]
     });
@@ -168,11 +172,11 @@ function drawCenters(fleetAssets) {
 }
 
 function applyState(state) {
-  markers.forEach(item => unitMarkers[item.id].setIcon(markerIcon(item, state.selected)));
+  markers.forEach(item => { if (unitMarkers[item.id]) unitMarkers[item.id].setIcon(markerIcon(item, state.selected)); });
 
   routesLayer.clearLayers();
-  line(state.droneRoute, '${Colors.tertiary}', '10 8');
-  line(state.robotRoute, '${Colors.warning}', '7 7');
+  line(state.droneRoute, '${MapColors.droneRoute}', '10 8');
+  line(state.robotRoute, '${MapColors.roverRoute}', '7 7');
 
   scanLayer.clearLayers();
   if (state.scanRoute.length > 1) {
@@ -189,8 +193,8 @@ function applyState(state) {
   if (state.incidentCoordinate) {
     L.circle([state.incidentCoordinate.latitude, state.incidentCoordinate.longitude], {
       radius: 180,
-      color: '${Colors.error}',
-      fillColor: '${Colors.error}',
+      color: '${MapColors.incident}',
+      fillColor: '${MapColors.incident}',
       fillOpacity: 0.16,
       weight: 2,
       dashArray: '6 5'
@@ -201,8 +205,8 @@ function applyState(state) {
   if (state.focusCoordinate) {
     L.circle([state.focusCoordinate.latitude, state.focusCoordinate.longitude], {
       radius: 55,
-      color: '${Colors.warning}',
-      fillColor: '${Colors.warning}',
+      color: '${MapColors.person}',
+      fillColor: '${MapColors.person}',
       fillOpacity: 0.12,
       weight: 2,
       dashArray: '5 4'
@@ -213,7 +217,7 @@ function applyState(state) {
   state.detectedPeople.forEach(person => {
     const icon = L.divIcon({
       className: '',
-      html: '<div style="width:18px;height:18px;border:2px solid ${Colors.warning};border-radius:50%;background:rgba(216,120,109,.85);box-shadow:0 0 10px ${Colors.warning};"></div>',
+      html: '<div style="width:18px;height:18px;border:2px solid ${MapColors.person};border-radius:50%;background:rgba(156,54,181,.25);box-shadow:0 0 10px ${MapColors.person};"></div>',
       iconSize: [18, 18],
       iconAnchor: [9, 9]
     });
@@ -274,7 +278,7 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = (props) => {
         type: asset.type,
         latitude: asset.homeCoordinates.lat,
         longitude: asset.homeCoordinates.lng,
-        color: asset.type === 'drone' ? Colors.tertiary : Colors.primary,
+        color: asset.type === 'drone' ? MapColors.drone : MapColors.rover,
       })),
       showCenters: props.showCenters ?? true,
       view: resolveViewTarget(props.focusCoordinate, props.incidentCoordinate, {
@@ -369,6 +373,6 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = (props) => {
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, overflow: 'hidden', backgroundColor: Colors.surfaceContainerLowest },
-  webView: { flex: 1, backgroundColor: Colors.surfaceContainerLowest },
+  root: { flex: 1, overflow: 'hidden', backgroundColor: MapColors.canvas },
+  webView: { flex: 1, backgroundColor: MapColors.canvas },
 });

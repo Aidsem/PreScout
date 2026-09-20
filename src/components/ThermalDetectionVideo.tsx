@@ -77,7 +77,7 @@ export const ThermalDetectionVideo: React.FC<ThermalDetectionVideoProps> = ({
         </Animated.View>
         <View style={styles.targetBox}>
           <View style={styles.targetLabel}>
-            <MaterialCommunityIcons name="account" size={11} color={Colors.white} />
+            <MaterialCommunityIcons name="account" size={11} color="#FFFFFF" />
             <Text style={styles.targetText}>HUMAN {confidence}%</Text>
           </View>
           <View style={styles.cornerTopLeft} />
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 3,
   },
-  targetText: { color: Colors.white, fontFamily: 'Courier', fontSize: 9, fontWeight: '700' },
+  targetText: { color: '#FFFFFF', fontFamily: 'Courier', fontSize: 9, fontWeight: '700' },
   cornerTopLeft: { position: 'absolute', top: -1, left: -1, width: 14, height: 14, borderTopWidth: 3, borderLeftWidth: 3, borderColor: '#FFE08A' },
   cornerTopRight: { position: 'absolute', top: -1, right: -1, width: 14, height: 14, borderTopWidth: 3, borderRightWidth: 3, borderColor: '#FFE08A' },
   cornerBottomLeft: { position: 'absolute', bottom: -1, left: -1, width: 14, height: 14, borderBottomWidth: 3, borderLeftWidth: 3, borderColor: '#FFE08A' },

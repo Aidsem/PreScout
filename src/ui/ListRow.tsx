@@ -31,7 +31,7 @@ export const ListRow: React.FC<ListRowProps> = ({ icon, iconColor, title, subtit
 
   if (onPress) {
     return (
-      <Pressable testID={testID} onPress={onPress} style={styles.row}>
+      <Pressable testID={testID} accessibilityRole="button" onPress={onPress} style={styles.row}>
         {content}
       </Pressable>
     );

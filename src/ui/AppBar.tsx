@@ -15,7 +15,13 @@ export const AppBar: React.FC<AppBarProps> = ({ title, eyebrow, onBack, onProfil
   return (
     <View style={styles.bar}>
       {onBack ? (
-        <Pressable onPress={onBack} hitSlop={8} style={styles.side}>
+        <Pressable
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          hitSlop={8}
+          style={styles.side}
+        >
           <MaterialCommunityIcons name="chevron-left" size={28} color={Colors.ink} />
         </Pressable>
       ) : null}
@@ -26,7 +32,13 @@ export const AppBar: React.FC<AppBarProps> = ({ title, eyebrow, onBack, onProfil
       {right ? (
         <View style={styles.side}>{right}</View>
       ) : onProfile ? (
-        <Pressable onPress={onProfile} hitSlop={8} style={styles.side}>
+        <Pressable
+          onPress={onProfile}
+          accessibilityRole="button"
+          accessibilityLabel="Profile"
+          hitSlop={8}
+          style={styles.side}
+        >
           <MaterialCommunityIcons name="account-circle-outline" size={26} color={Colors.ink} />
         </Pressable>
       ) : null}

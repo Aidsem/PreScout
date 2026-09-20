@@ -950,9 +950,13 @@ export const LiveMapScreen: React.FC<MainTabScreenProps<"LiveMap">> = ({
                     : "video-outline"
                 }
                 size={18}
-                color={Colors.white}
+                color={Colors.onAccent}
               />
-              <Text style={styles.primaryVideoText}>
+              <Text
+                style={styles.primaryVideoText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
                 {selectedMarker === "person"
                   ? "VIEW DETECTION"
                   : "VIEW LIVE VIDEO"}
@@ -967,9 +971,15 @@ export const LiveMapScreen: React.FC<MainTabScreenProps<"LiveMap">> = ({
                 <MaterialCommunityIcons
                   name="close"
                   size={18}
-                  color={Colors.onSurface}
+                  color={Colors.ink}
                 />
-                <Text style={styles.secondaryRouteText}>CLEAR</Text>
+                <Text
+                  style={styles.secondaryRouteText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  CLEAR
+                </Text>
               </Pressable>
             ) : (
               <Pressable
@@ -979,9 +989,15 @@ export const LiveMapScreen: React.FC<MainTabScreenProps<"LiveMap">> = ({
                 <MaterialCommunityIcons
                   name="map-marker-path"
                   size={18}
-                  color={Colors.onSurface}
+                  color={Colors.ink}
                 />
-                <Text style={styles.secondaryRouteText}>VIEW DIRECTIONS</Text>
+                <Text
+                  style={styles.secondaryRouteText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  VIEW DIRECTIONS
+                </Text>
               </Pressable>
             )}
           </View>
@@ -993,7 +1009,11 @@ export const LiveMapScreen: React.FC<MainTabScreenProps<"LiveMap">> = ({
                 size={16}
                 color={Colors.error}
               />
-              <Text style={styles.reportChipText}>
+              <Text
+                style={styles.reportChipText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
                 REPORT INCIDENT — DISPATCH AIR + GROUND
               </Text>
             </Pressable>
@@ -1064,10 +1084,10 @@ const styles = StyleSheet.create({
     top: Spacing.sm,
     left: Spacing.sm,
     right: Spacing.sm,
-    backgroundColor: "rgba(10, 15, 26, 0.88)",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.outlineVariant,
+    borderColor: Colors.border,
     padding: Spacing.sm + 4,
     zIndex: 20,
     elevation: 16,
@@ -1139,10 +1159,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 168,
     right: Spacing.sm,
-    backgroundColor: "rgba(10, 15, 26, 0.9)",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.outlineVariant,
+    borderColor: Colors.border,
     padding: 4,
     gap: 6,
     zIndex: 30,
@@ -1169,10 +1189,10 @@ const styles = StyleSheet.create({
     bottom: Spacing.sm,
     left: Spacing.sm,
     right: Spacing.sm,
-    backgroundColor: "rgba(10, 15, 26, 0.94)",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.outlineVariant,
+    borderColor: Colors.border,
     padding: Spacing.md,
     zIndex: 30,
     elevation: 20,
@@ -1242,43 +1262,51 @@ const styles = StyleSheet.create({
   },
   drawerActionRow: {
     flexDirection: "row",
+    alignItems: "stretch",
     gap: 8,
   },
   primaryVideoAction: {
-    flex: 2,
-    backgroundColor: Colors.tertiary,
+    flex: 1,
+    minHeight: 44,
+    backgroundColor: Colors.accent,
     borderRadius: 8,
     paddingVertical: 10,
+    paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
   },
   primaryVideoText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
-    color: Colors.primaryContainer,
-    letterSpacing: 0.5,
+    color: Colors.onAccent,
+    letterSpacing: 0.3,
+    flexShrink: 1,
   },
   secondaryRouteAction: {
     flex: 1,
-    backgroundColor: Colors.surfaceVariant,
+    minHeight: 44,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.outlineVariant,
+    borderColor: Colors.border,
     borderRadius: 8,
     paddingVertical: 10,
+    paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
   },
   secondaryRouteText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: Colors.onSurface,
+    fontSize: 11,
+    fontWeight: "700",
+    color: Colors.ink,
+    flexShrink: 1,
   },
   reportChip: {
     marginTop: 10,
+    minHeight: 44,
     borderWidth: 1,
     borderColor: "rgba(239, 68, 68, 0.45)",
     backgroundColor: "rgba(239, 68, 68, 0.12)",
@@ -1296,6 +1324,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 10,
     letterSpacing: 0.4,
+    flexShrink: 1,
   },
   legendRow: {
     marginTop: 10,

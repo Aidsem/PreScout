@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(11, 13, 12, 0.78)',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
   },
   uploadTitle: {
     fontSize: 12,

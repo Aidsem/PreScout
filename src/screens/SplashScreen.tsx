@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   uplinkBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 33, 7, 0.6)',
+    backgroundColor: Colors.accentContainer,
     borderColor: 'rgba(184, 216, 106, 0.3)',
     borderWidth: 1,
     paddingHorizontal: 12,
