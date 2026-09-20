@@ -14,7 +14,15 @@
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "types": ["jest"]
+    "types": [
+      "jest"
+    ]
   },
-  "extends": "expo/tsconfig.base"
+  "extends": "expo/tsconfig.base",
+  "exclude": [
+    "node_modules",
+    ".claude",
+    "server",
+    "shared"
+  ]
 }
