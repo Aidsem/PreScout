@@ -52,7 +52,7 @@ export const CommandCenterScreen: React.FC<MainTabScreenProps<'CommandTab'>> = (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.surfaceContainer} />
       <TacticalHeader
-        title="RESQMESH"
+        title="PRESCOUT"
         subtitle="COMMAND & CONTROL"
         onProfilePress={() => openScreen(navigation, 'Profile')}
       />

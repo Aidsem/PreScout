@@ -40,14 +40,14 @@ export const MissionHistoryScreen: React.FC<MainTabScreenProps<'HistoryTab'>> = 
     const exportPayload = JSON.stringify(
       {
         exportedAt: new Date().toISOString(),
-        format: 'resqmesh-mission-export',
+        format: 'prescout-mission-export',
         missions: filteredMissions,
       },
       null,
       2
     );
     void Share.share({
-      title: 'ResQMesh mission export',
+      title: 'PreScout mission export',
       message: exportPayload,
     }).catch((error) => {
       console.warn('Mission export sharing failed.', error);
@@ -66,7 +66,7 @@ export const MissionHistoryScreen: React.FC<MainTabScreenProps<'HistoryTab'>> = 
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.surfaceContainer} />
       <TacticalHeader
-        title="RESQMESH"
+        title="PRESCOUT"
         subtitle="MISSION ARCHIVE & AUDIT LOGS"
       />
 

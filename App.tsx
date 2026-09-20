@@ -19,7 +19,7 @@ export default function App() {
       if (active && !permission.granted) {
         Alert.alert(
           'Location access needed',
-          'ResQMesh uses your location so incident reports include the exact place where help is needed.',
+          'PreScout uses your location so incident reports include the exact place where help is needed.',
           [
             { text: 'Try again', onPress: requestLocationAccess },
             { text: 'Not now', style: 'cancel' },

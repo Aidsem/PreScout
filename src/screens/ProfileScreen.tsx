@@ -16,7 +16,7 @@ export const ProfileScreen: React.FC<RootStackScreenProps<'Profile'>> = ({ navig
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.surfaceContainer} />
       <TacticalHeader
-        title="RESQMESH"
+        title="PRESCOUT"
         subtitle="OPERATOR PROFILE"
         showBack
         onBack={() => navigation.goBack()}

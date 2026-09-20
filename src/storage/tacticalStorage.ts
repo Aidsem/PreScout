@@ -7,9 +7,9 @@ export interface TacticalStorage {
   setItem(key: string, value: string): Promise<void>;
 }
 
-export const STORAGE_KEY = 'resqmesh.tactical';
+export const STORAGE_KEY = 'prescout.tactical';
 /** Where an unreadable snapshot is parked so it is not lost and not re-read. */
-export const BACKUP_KEY = 'resqmesh.tactical.corrupt';
+export const BACKUP_KEY = 'prescout.tactical.corrupt';
 
 export const asyncStorageAdapter: TacticalStorage = {
   getItem: (key) => AsyncStorage.getItem(key),

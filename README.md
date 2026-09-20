@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛰️ RESQMESH Mobile Command Center
+# 🛰️ PRESCOUT Mobile Command Center
 ### Tactical Disaster Response, Swarm Orchestration & Offline Search-and-Rescue (SAR)
 
 [![Expo SDK](https://img.shields.io/badge/Expo-SDK_57-000000.svg?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
@@ -24,7 +24,7 @@
 
 During catastrophic events—such as flash floods, earthquakes, landslides, and major structural collapses—traditional telecommunications and cellular towers are frequently destroyed or congested. In these high-stakes, time-critical windows, search-and-rescue teams require continuous situational awareness, immediate aerial surveillance, and coordinated unit dispatch.
 
-**RESQMESH Mobile Command Center** provides tactical field teams with a decentralized, mobile-first unified operations dashboard. Built with **React Native** and **Expo SDK 57**, it integrates real-time autonomous drone telemetry, FLIR thermal human detection, dynamic geospatial route planning, and instant asset tasking into a cybernetic HUD designed for high-stress field conditions.
+**PRESCOUT Mobile Command Center** provides tactical field teams with a decentralized, mobile-first unified operations dashboard. Built with **React Native** and **Expo SDK 57**, it integrates real-time autonomous drone telemetry, FLIR thermal human detection, dynamic geospatial route planning, and instant asset tasking into a cybernetic HUD designed for high-stress field conditions.
 
 ---
 
@@ -71,7 +71,7 @@ graph TD
         RoutingService[🗺️ OpenRouteService / Offline OSRM]
     end
 
-    subgraph CoreApplication [RESQMESH Mobile App Engine]
+    subgraph CoreApplication [PRESCOUT Mobile App Engine]
         TacticalStore[📦 TacticalContext Store<br/>Telemetry Bus • Incident State • Swarm Coordinator]
         DispatchEngine[⚡ Tactical Dispatch & Route Engine]
         MapEngine[🗺️ OpenRouteMap Engine<br/>Native Leaflet & Web OSM]
@@ -157,8 +157,8 @@ graph TD
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/resqmesh_mobile.git
-cd resqmesh_mobile
+git clone https://github.com/your-username/prescout_mobile.git
+cd prescout_mobile
 ```
 
 ### 2. Install Dependencies
@@ -199,7 +199,7 @@ Scan the QR code printed in the terminal using the **Expo Go** application (Andr
 
 ## 📡 Offline & Zero-Network Resilience
 
-RESQMESH is engineered from the ground up to survive real-world field conditions where infrastructure is down:
+PRESCOUT is engineered from the ground up to survive real-world field conditions where infrastructure is down:
 
 1. **Deterministic Local State**: Operational data (active missions, fleet positions, incident reports, and tactical logs) resides in reactive local memory with graceful offline persistence.
 2. **Dynamic Route Fallbacks**: If external routing services (ORS/OSRM) are unreachable due to lack of cellular data, the tactical engine computes direct vector geodesics and offline simulated flight paths.
@@ -210,7 +210,7 @@ RESQMESH is engineered from the ground up to survive real-world field conditions
 ## 📂 Project Structure
 
 ```
-resqmesh_mobile/
+prescout_mobile/
 ├── assets/                    # Application icons, splash screens, and imagery
 ├── src/
 │   ├── components/            # Reusable UI components (HUD badges, maps, cards)

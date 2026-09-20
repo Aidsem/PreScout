@@ -68,7 +68,7 @@ export const AssetSelectionScreen: React.FC<MainTabScreenProps<'AssetsTab'>> = (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.surfaceContainer} />
       <TacticalHeader
-        title="RESQMESH"
+        title="PRESCOUT"
         subtitle="FLEET INVENTORY & DISPATCH"
       />
 

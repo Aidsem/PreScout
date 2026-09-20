@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "resqmesh_app",
-    "slug": "resqmesh_app",
+    "name": "PreScout",
+    "slug": "prescout",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
@@ -26,14 +26,14 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow ResQMesh to use your location so emergency reports include the exact incident position."
+          "locationWhenInUsePermission": "Allow PreScout to use your location so emergency reports include the exact incident position."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow ResQMesh to attach photos to emergency reports.",
-          "cameraPermission": "Allow ResQMesh to take photos for emergency reports.",
+          "photosPermission": "Allow PreScout to attach photos to emergency reports.",
+          "cameraPermission": "Allow PreScout to take photos for emergency reports.",
           "microphonePermission": false
         }
       ],

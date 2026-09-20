@@ -33,7 +33,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <MaterialCommunityIcons name="alert-octagon-outline" size={48} color={Colors.error} />
           <Text style={styles.title}>SYSTEM FAULT</Text>
           <Text style={styles.message}>
-            RESQMESH hit an unexpected error and this screen couldn't render.
+            PRESCOUT hit an unexpected error and this screen couldn't render.
           </Text>
           <TouchableOpacity style={styles.button} onPress={this.reset}>
             <Text style={styles.buttonText}>RESET</Text>

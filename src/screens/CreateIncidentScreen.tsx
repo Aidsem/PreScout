@@ -265,7 +265,7 @@ export const CreateIncidentScreen: React.FC<RootStackScreenProps<'CreateIncident
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.surfaceContainer} />
       <TacticalHeader
-        title="RESQMESH"
+        title="PRESCOUT"
         subtitle="INCIDENT INITIALIZATION PROTOCOL"
         showBack
         onBack={() => navigation.goBack()}

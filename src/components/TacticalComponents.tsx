@@ -22,7 +22,7 @@ export interface TacticalHeaderProps {
 }
 
 export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
-  title = 'RESQMESH',
+  title = 'PRESCOUT',
   subtitle,
   showBack = false,
   onBack,

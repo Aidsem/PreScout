@@ -30,7 +30,7 @@ export const LiveMonitoringScreen: React.FC<RootStackScreenProps<'LiveMonitoring
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.surfaceContainer} />
       <TacticalHeader
-        title="RESQMESH"
+        title="PRESCOUT"
         subtitle="SURVEILLANCE & AI SENSORS"
         showBack
         onBack={() => navigation.goBack()}

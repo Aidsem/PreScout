@@ -74,11 +74,11 @@ export const OnboardingScreen: React.FC<RootStackScreenProps<'Onboarding'>> = ({
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
-      {/* Top Bar with RESQMESH and SKIP */}
+      {/* Top Bar with PRESCOUT and SKIP */}
       <View style={styles.topBar}>
         <View style={styles.logoRow}>
           <MaterialCommunityIcons name="access-point-network" size={20} color={Colors.tertiary} />
-          <Text style={styles.topLogoText}>RESQMESH</Text>
+          <Text style={styles.topLogoText}>PRESCOUT</Text>
         </View>
         <TouchableOpacity onPress={handleSkip} activeOpacity={0.7} style={styles.skipButton}>
           <Text style={styles.skipButtonText}>SKIP</Text>

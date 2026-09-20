@@ -85,7 +85,7 @@ export const MissionPlanningScreen: React.FC<MainTabScreenProps<'MissionsTab'>> 
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.surfaceContainer} />
       <TacticalHeader
-        title="RESQMESH"
+        title="PRESCOUT"
         subtitle="MISSION PLANNING & GEOFENCING"
       />
 

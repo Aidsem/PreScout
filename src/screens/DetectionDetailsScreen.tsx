@@ -80,7 +80,7 @@ export const DetectionDetailsScreen: React.FC<RootStackScreenProps<'DetectionDet
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.surfaceContainer} />
       <TacticalHeader
-        title="RESQMESH"
+        title="PRESCOUT"
         subtitle="FORENSIC SENSOR INTELLIGENCE"
         showBack
         onBack={() => navigation.goBack()}

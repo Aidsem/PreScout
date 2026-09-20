@@ -78,7 +78,7 @@ export const SplashScreen: React.FC<RootStackScreenProps<'Splash'>> = ({ navigat
           </View>
         </View>
 
-        <Text style={styles.brandTitle}>RESQMESH</Text>
+        <Text style={styles.brandTitle}>PRESCOUT</Text>
         <Text style={styles.brandSubtitle}>TACTICAL DISASTER COMMAND SYSTEM</Text>
 
         <View style={styles.uplinkBadge}>

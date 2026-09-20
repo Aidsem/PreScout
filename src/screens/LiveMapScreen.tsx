@@ -766,7 +766,7 @@ export const LiveMapScreen: React.FC<MainTabScreenProps<"LiveMap">> = ({
         backgroundColor={Colors.surfaceContainer}
       />
       <TacticalHeader
-        title="RESQMESH"
+        title="PRESCOUT"
         subtitle="GEOSPATIAL SITUATIONAL AWARENESS"
         onProfilePress={() => openScreen(navigation, "Profile")}
       />
