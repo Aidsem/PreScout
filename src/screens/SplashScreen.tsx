@@ -25,6 +25,7 @@ export const SplashScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       'SYSTEM ONLINE.',
     ];
 
+    let handoff: ReturnType<typeof setTimeout> | undefined;
     const interval = setInterval(() => {
       setProgress((prev) => {
         const next = Math.min(prev + Math.floor(Math.random() * 8) + 4, 100);
@@ -43,7 +44,7 @@ export const SplashScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
         if (next >= 100) {
           clearInterval(interval);
-          setTimeout(() => {
+          handoff = setTimeout(() => {
             navigation.replace('Onboarding');
           }, 600);
         }
@@ -51,7 +52,10 @@ export const SplashScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
       });
     }, 120);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (handoff) clearTimeout(handoff);
+    };
   }, [navigation]);
 
   const progressWidth = progressAnim.current.interpolate({
