@@ -10,6 +10,7 @@ import {
   DispatchResult,
 } from '../types';
 import { RESPONSE_STATIONS, distanceBetween } from '../dispatch/stations';
+import { nextId } from '../utils/id';
 
 interface TacticalContextType {
   incidents: Incident[];
@@ -267,14 +268,6 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [flightSimToken, setFlightSimToken] = useState(0);
   const [latestDispatch, setLatestDispatch] = useState<DispatchResult>();
 
-  useEffect(() => {
-    const droneCount = assets.filter((asset) => asset.type === 'drone').length;
-    const roverCount = assets.filter((asset) => asset.type === 'rover').length;
-    if (droneCount < 20 || roverCount < 20) {
-      setAssets(initialAssets);
-    }
-  }, [assets]);
-
   const [missionParams, setMissionParams] = useState<MissionParameters>({
     unitId: 'drone-01',
     droneUnitId: 'drone-01',
@@ -315,7 +308,7 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const bDistance = distanceBetween(b.homeCoordinates, target);
         return aDistance - bDistance;
       })[0];
-    const incidentId = `inc-${Date.now().toString().slice(-6)}`;
+    const incidentId = nextId('inc');
     const assignedNames = [availableDrone?.name, availableRover?.name].filter(Boolean);
     const newInc: Incident = {
       ...newIncidentData,
@@ -349,7 +342,7 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         : 'no available police-station robot',
     ].join('; ');
     const newLog: SystemLog = {
-      id: `log-${Date.now()}`,
+      id: nextId('log'),
       time: new Date().toISOString().substring(11, 16),
       category: 'COMM',
       message: `Incident ${newInc.id} dispatched immediately: ${dispatchSummary}.`,
@@ -386,7 +379,7 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const nextMode = prev.cameraMode === 'RGB' ? 'THERMAL' : 'RGB';
       // Append log
       const newLog: SystemLog = {
-        id: `log-${Date.now()}`,
+        id: nextId('log'),
         time: new Date().toISOString().substring(11, 16),
         category: 'SYS',
         message: `Camera mode toggled to ${nextMode}`,
@@ -404,7 +397,7 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       )
     );
     const newLog: SystemLog = {
-      id: `log-${Date.now()}`,
+      id: nextId('log'),
       time: new Date().toISOString().substring(11, 16),
       category: 'AI',
       message: `Detection alert #${alertId} marked as RESOLVED by operator.`,
@@ -428,7 +421,7 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   ) => {
     setLogs((prev) => [
       {
-        id: `log-${Date.now()}`,
+        id: nextId('log'),
         time: new Date().toISOString().substring(11, 16),
         category,
         message,
