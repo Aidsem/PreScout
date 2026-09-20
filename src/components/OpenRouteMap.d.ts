@@ -2,6 +2,7 @@ import type React from 'react';
 import type { MapPoint, MarkerType } from '../map/mapModel';
 import type { RouteCoordinate } from '../services/openRouteService';
 import type { FleetAsset } from '../types';
+import type { MapProjection } from '../map/projection';
 
 export interface DetectedPersonCoordinate {
   id: string;
@@ -26,6 +27,7 @@ export interface OpenRouteMapProps {
   robotRoute?: RouteCoordinate[];
   dronePosition?: MapPoint;
   roverPosition?: MapPoint;
+  projection?: MapProjection;
 }
 
 export declare const OpenRouteMap: React.FC<OpenRouteMapProps>;

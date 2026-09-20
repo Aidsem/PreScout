@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -20,7 +20,6 @@ import { ensurePath } from "../utils/pathMotion";
 import { useRouteTravel } from "../hooks/useRouteTravel";
 import { openScreen } from "../navigation/openScreen";
 import {
-  MAP_MARKERS,
   MapPoint,
   MarkerType,
   buildAirGrid,
@@ -29,6 +28,13 @@ import {
   svgToGrid,
 } from "../map/mapModel";
 import { getOpenRoute, RouteCoordinate } from "../services/openRouteService";
+import {
+  DEFAULT_BOUNDS,
+  MapProjection,
+  createProjection,
+  projectionFromBounds,
+} from "../map/projection";
+import { resolveDestination } from "../map/resolveDestination";
 
 const issueCoordinates: Record<MarkerType, RouteCoordinate> = {
   drone: { latitude: 18.5324, longitude: 73.8464 },
@@ -37,26 +43,13 @@ const issueCoordinates: Record<MarkerType, RouteCoordinate> = {
   rover: { latitude: 18.4974, longitude: 73.8427 },
 };
 
-function coordinateToMapPoint(coordinate: RouteCoordinate): MapPoint {
-  return {
-    x: ((coordinate.longitude - 73.79) / 0.14) * 400,
-    y: ((18.56 - coordinate.latitude) / 0.12) * 540,
-  };
-}
-
-function mapPointToCoordinate(point: MapPoint): RouteCoordinate {
-  return {
-    latitude: 18.56 - (point.y / 540) * 0.12,
-    longitude: 73.79 + (point.x / 400) * 0.14,
-  };
-}
-
 function buildRoadFallbackRoute(
   from: RouteCoordinate,
   to: RouteCoordinate,
   gridRoute: MapPoint[],
+  projection: MapProjection,
 ): RouteCoordinate[] {
-  const gridCoordinates = gridRoute.map(mapPointToCoordinate);
+  const gridCoordinates = gridRoute.map(projection.toCoordinate);
   const midpoint = {
     latitude: (from.latitude + to.latitude) / 2,
     longitude: (from.longitude + to.longitude) / 2,
@@ -120,12 +113,15 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
   const [scanStarted, setScanStarted] = useState(false);
   const [incidentCoordinate, setIncidentCoordinate] =
     useState<RouteCoordinate>();
+  const incidentCoordinateRef = useRef<RouteCoordinate | undefined>(undefined);
+  incidentCoordinateRef.current = incidentCoordinate;
   const [focusCoordinate, setFocusCoordinate] = useState<RouteCoordinate>();
+  const [projection, setProjection] = useState<MapProjection>(() =>
+    projectionFromBounds(DEFAULT_BOUNDS),
+  );
 
   const airGrid = useMemo(() => buildAirGrid(), []);
   const groundGrid = useMemo(() => buildGroundGrid(), []);
-  const droneHome = MAP_MARKERS.drone;
-  const roverHome = MAP_MARKERS.rover;
   const droneHomeCoordinate = issueCoordinates.drone;
   const roverHomeCoordinate = issueCoordinates.rover;
   const droneTravel = useRouteTravel(
@@ -238,12 +234,12 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
     destinationOverride?: RouteCoordinate,
     shouldSimulate = false,
   ) => {
-    const target = MAP_MARKERS[targetMarker];
-    const destination = destinationOverride ?? issueCoordinates[targetMarker];
-    const targetPoint = destinationOverride
-      ? coordinateToMapPoint(destination)
-      : target;
-    const dest = svgToGrid(targetPoint.x, targetPoint.y);
+    const destination = resolveDestination(
+      targetMarker,
+      destinationOverride,
+      incidentCoordinateRef.current,
+      issueCoordinates,
+    );
     const nearestAvailableDrone = assets
       .filter((asset) => asset.type === "drone" && asset.status === "AVAILABLE")
       .sort((a, b) => {
@@ -304,12 +300,12 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
               longitude: nearestAvailableRover.homeCoordinates.lng,
             }
           : issueCoordinates.rover);
-    const droneStart = origins?.drone
-      ? coordinateToMapPoint(droneOrigin)
-      : droneHome;
-    const roverStart = origins?.rover
-      ? coordinateToMapPoint(roverOrigin)
-      : roverHome;
+    const nextProjection = createProjection([droneOrigin, roverOrigin, destination]);
+    setProjection(nextProjection);
+    const targetPoint = nextProjection.toPoint(destination);
+    const dest = svgToGrid(targetPoint.x, targetPoint.y);
+    const droneStart = nextProjection.toPoint(droneOrigin);
+    const roverStart = nextProjection.toPoint(roverOrigin);
     const air = findPath(airGrid, svgToGrid(droneStart.x, droneStart.y), dest, {
       diagonal: true,
     });
@@ -341,7 +337,6 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
     setDetectedPeople([]);
     setPendingScanPeople([]);
     setFocusCoordinate(undefined);
-    setIncidentCoordinate(undefined);
 
     setDroneRoute(undefined);
     setRobotRoute(undefined);
@@ -357,6 +352,7 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
         roverOrigin,
         destination,
         ground.map(([row, col]) => gridToSvg(row, col)),
+        nextProjection,
       );
       setRobotRoute(
         groundRoute && groundRoute.length >= 3
@@ -374,6 +370,7 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
           roverOrigin,
           destination,
           ground.map(([row, col]) => gridToSvg(row, col)),
+          nextProjection,
         ),
       );
     }
@@ -474,10 +471,12 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
     )
       return;
     setSelectedMarker("person");
-    setIncidentCoordinate({
+    const dispatchedCoordinate = {
       latitude: latestDispatch.incident.coordinates.lat,
       longitude: latestDispatch.incident.coordinates.lng,
-    });
+    };
+    setIncidentCoordinate(dispatchedCoordinate);
+    incidentCoordinateRef.current = dispatchedCoordinate;
     void computeRoutes(
       "person",
       {
@@ -511,7 +510,7 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
       selectedMarker === "drone" || selectedMarker === "rover"
         ? "person"
         : selectedMarker;
-    const target = issueCoordinates[targetId];
+    const target = incidentCoordinate ?? issueCoordinates[targetId];
     const incidentTitle =
       targetId === "hazard"
         ? "Flood hazard response"
@@ -563,10 +562,12 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
     }
 
     setSelectedMarker(targetId);
+    setIncidentCoordinate(target);
+    incidentCoordinateRef.current = target;
     void computeRoutes(
       targetId,
       dispatchOrigins,
-      undefined,
+      target,
       Boolean(dispatchOrigins.drone || dispatchOrigins.rover),
     );
   };
@@ -589,6 +590,8 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
     setDetectedPeople([]);
     setPendingScanPeople([]);
     setFocusCoordinate(undefined);
+    setIncidentCoordinate(undefined);
+    incidentCoordinateRef.current = undefined;
     setDronePath(undefined);
     setRobotPath(undefined);
     setDroneRoute(undefined);
@@ -737,6 +740,7 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
           detectedPeople={detectedPeople}
           focusCoordinate={focusCoordinate}
           incidentCoordinate={incidentCoordinate}
+          projection={projection}
         />
 
         <View style={styles.topMissionHud} pointerEvents="auto">

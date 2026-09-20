@@ -5,6 +5,7 @@ import Svg, { Polygon, Polyline } from 'react-native-svg';
 import { Colors } from '../theme/colors';
 import { MAP_MARKERS, MarkerType, MapPoint } from '../map/mapModel';
 import { RouteCoordinate } from '../services/openRouteService';
+import { DEFAULT_BOUNDS, MapProjection, projectionFromBounds } from '../map/projection';
 import { FleetAsset } from '../types';
 import { HOSPITAL_LOCATIONS, RESPONSE_STATIONS } from '../dispatch/stations';
 
@@ -25,9 +26,10 @@ interface OpenRouteMapProps {
   robotPath?: MapPoint[];
   droneRoute?: RouteCoordinate[];
   robotRoute?: RouteCoordinate[];
+  projection?: MapProjection;
 }
 
-const bounds = { west: 73.70, east: 74.00, north: 18.66, south: 18.42 };
+const defaultProjection = projectionFromBounds(DEFAULT_BOUNDS);
 const markerCoordinates: Record<MarkerType, RouteCoordinate> = {
   drone: { latitude: 18.5324, longitude: 73.8464 },
   hazard: { latitude: 18.5188, longitude: 73.8624 },
@@ -40,17 +42,6 @@ const markerColors: Record<MarkerType, string> = {
   person: Colors.warning,
   rover: Colors.primary,
 };
-
-function toCoordinate(point: MapPoint): RouteCoordinate {
-  return { latitude: 18.56 - (point.y / 540) * 0.12, longitude: 73.79 + (point.x / 400) * 0.14 };
-}
-
-function markerPosition(coordinate: RouteCoordinate) {
-  return {
-    left: `${((coordinate.longitude - bounds.west) / (bounds.east - bounds.west)) * 100}%` as `${number}%`,
-    top: `${((bounds.north - coordinate.latitude) / (bounds.north - bounds.south)) * 100}%` as `${number}%`,
-  };
-}
 
 export const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
   selectedMarker,
@@ -67,7 +58,14 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = ({
   incidentCoordinate,
   dronePosition,
   roverPosition,
+  projection = defaultProjection,
 }) => {
+  const bounds = projection.bounds;
+  const toCoordinate = projection.toCoordinate;
+  const markerPosition = (coordinate: RouteCoordinate) => ({
+    left: `${((coordinate.longitude - bounds.west) / (bounds.east - bounds.west)) * 100}%` as `${number}%`,
+    top: `${((bounds.north - coordinate.latitude) / (bounds.north - bounds.south)) * 100}%` as `${number}%`,
+  });
   const iframeSource =
     `https://www.openstreetmap.org/export/embed.html?bbox=${bounds.west}%2C${bounds.south}%2C${bounds.east}%2C${bounds.north}&layer=mapnik`;
 

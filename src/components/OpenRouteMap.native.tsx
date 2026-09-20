@@ -4,6 +4,7 @@ import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { Colors } from '../theme/colors';
 import { MAP_MARKERS, MarkerType, MapPoint } from '../map/mapModel';
 import { RouteCoordinate } from '../services/openRouteService';
+import { DEFAULT_BOUNDS, MapProjection, projectionFromBounds } from '../map/projection';
 import { FleetAsset } from '../types';
 import { HOSPITAL_LOCATIONS, RESPONSE_STATIONS } from '../dispatch/stations';
 
@@ -23,6 +24,7 @@ interface OpenRouteMapProps {
   robotRoute?: RouteCoordinate[];
   dronePosition?: MapPoint;
   roverPosition?: MapPoint;
+  projection?: MapProjection;
 }
 
 const markerCoordinates: Record<MarkerType, RouteCoordinate> = {
@@ -39,12 +41,7 @@ const markerColors: Record<MarkerType, string> = {
   rover: Colors.primary,
 };
 
-function svgPointToCoordinate(point: MapPoint): RouteCoordinate {
-  return {
-    latitude: 18.56 - (point.y / 540) * 0.12,
-    longitude: 73.79 + (point.x / 400) * 0.14,
-  };
-}
+const defaultProjection = projectionFromBounds(DEFAULT_BOUNDS);
 
 function buildMapHtml(
   selectedMarker: MarkerType,
@@ -58,9 +55,10 @@ function buildMapHtml(
   detectedPeople?: Array<{ id: string; latitude: number; longitude: number }>
   ,focusCoordinate?: RouteCoordinate
   ,incidentCoordinate?: RouteCoordinate
+  ,projection: MapProjection = defaultProjection
 ) {
   const route = (nativeRoute?: RouteCoordinate[], fallback?: MapPoint[]) =>
-    nativeRoute ?? fallback?.map(svgPointToCoordinate) ?? [];
+    nativeRoute ?? fallback?.map(projection.toCoordinate) ?? [];
   const markers = (Object.keys(MAP_MARKERS) as MarkerType[]).map((id) => {
     const coordinate = markerCoordinates[id];
     return {
@@ -79,6 +77,10 @@ function buildMapHtml(
   const peopleJson = JSON.stringify(detectedPeople ?? []);
   const incidentJson = JSON.stringify(incidentCoordinate ?? null);
   const focusJson = JSON.stringify(focusCoordinate ?? null);
+  const viewCenterJson = JSON.stringify([
+    (projection.bounds.north + projection.bounds.south) / 2,
+    (projection.bounds.east + projection.bounds.west) / 2,
+  ]);
   const fleetJson = JSON.stringify(
     fleetAssets.map((asset) => ({
       id: asset.id,
@@ -123,14 +125,19 @@ const scanRoute = ${scanJson};
 const detectedPeople = ${peopleJson};
 const incidentCoordinate = ${incidentJson};
 const focusCoordinate = ${focusJson};
+const viewCenter = ${viewCenterJson};
 const fleetAssets = ${fleetJson};
 const responseStations = ${stationJson};
 const hospitals = ${hospitalJson};
 const showCenters = ${JSON.stringify(showCenters)};
 const unitMarkers = {};
 const map = L.map('map', { zoomControl: false, attributionControl: true }).setView(
-  focusCoordinate ? [focusCoordinate.latitude, focusCoordinate.longitude] : [18.54, 73.84],
-  focusCoordinate ? 16 : 11
+  focusCoordinate
+    ? [focusCoordinate.latitude, focusCoordinate.longitude]
+    : incidentCoordinate
+      ? [incidentCoordinate.latitude, incidentCoordinate.longitude]
+      : viewCenter,
+  focusCoordinate ? 16 : incidentCoordinate ? 13 : 11
 );
 L.control.zoom({ position: 'topright' }).addTo(map);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
@@ -247,6 +254,7 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = (props) => {
         ,props.detectedPeople
         ,props.focusCoordinate
         ,props.incidentCoordinate
+        ,props.projection
       ),
     [
       props.selectedMarker,
@@ -260,14 +268,16 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = (props) => {
       props.detectedPeople,
       props.focusCoordinate,
       props.incidentCoordinate,
+      props.projection,
     ]
   );
   const source = useMemo(() => ({ html }), [html]);
 
   useEffect(() => {
+    const toCoordinate = (props.projection ?? defaultProjection).toCoordinate;
     const updates = [
-      { id: 'drone', coordinate: props.droneCoordinate ?? (props.dronePosition ? svgPointToCoordinate(props.dronePosition) : undefined) },
-      { id: 'rover', coordinate: props.roverCoordinate ?? (props.roverPosition ? svgPointToCoordinate(props.roverPosition) : undefined) },
+      { id: 'drone', coordinate: props.droneCoordinate ?? (props.dronePosition ? toCoordinate(props.dronePosition) : undefined) },
+      { id: 'rover', coordinate: props.roverCoordinate ?? (props.roverPosition ? toCoordinate(props.roverPosition) : undefined) },
     ];
 
     updates.forEach((update) => {
@@ -284,6 +294,7 @@ export const OpenRouteMap: React.FC<OpenRouteMapProps> = (props) => {
     props.dronePosition?.y,
     props.roverPosition?.x,
     props.roverPosition?.y,
+    props.projection,
   ]);
 
   const handleMessage = (event: WebViewMessageEvent) => {
