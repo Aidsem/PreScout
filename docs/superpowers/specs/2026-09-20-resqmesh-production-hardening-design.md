@@ -52,13 +52,16 @@ split's tests build on the Jest setup from #3).
   helper exporting `nextId(prefix: string)` that combines a timestamp with
   a module-scoped incrementing counter, so two dispatches/logs in the same
   millisecond can't collide. No new dependency needed.
-- Audit the 12 existing `any`/`@ts-ignore` occurrences; replace with
-  concrete types where feasible (expected concentration: WebView
-  `postMessage` payloads and the native/web map component split). Where a
-  suppression is genuinely required (e.g. a third-party type gap), leave
-  it with a one-line comment explaining why.
-- Remove or gate the 4 stray `console.*` calls behind `if (__DEV__)` if
-  they have ongoing debugging value; otherwise delete them.
+- Replace the 12 `any`-typed occurrences (all are `navigation: any` /
+  `route?: any` screen props — every screen component plus
+  `src/navigation/openScreen.ts`) with real types: a `RootStackParamList`
+  / `MainTabParamList` pair in a new `src/types/navigation.ts`, applied to
+  each screen via React Navigation's typed screen-prop helpers.
+- No `console.*` changes needed: all 4 existing calls (in
+  `LiveMapScreen.tsx`, `MissionHistoryScreen.tsx`,
+  `CreateIncidentScreen.tsx` x2) are inside `catch` blocks paired with a
+  user-facing `Alert`/error-state update — intentional diagnostics, not
+  debug leftovers. Confirmed during plan-writing; dropped from scope.
 
 ## 2. Lint/format/CI tooling
 
@@ -102,15 +105,18 @@ split's tests build on the Jest setup from #3).
 - Split the single `TacticalContext` (currently: incidents, assets,
   alerts, telemetry, logs, mission history, mission params, all in one
   provider whose value is rebuilt every 4s by the telemetry simulation
-  tick) into four focused contexts, each with its own hook:
-  - `TelemetryContext` / `useTelemetry` — `telemetry`, `cameraMode`
-    toggle, `flightSimToken`.
+  tick) into five focused contexts, each with its own hook:
+  - `TelemetryContext` / `useTelemetry` — `telemetry`, `toggleCameraMode`,
+    `flightSimToken`, `startFlightSimulation`.
   - `IncidentContext` / `useIncidents` — `incidents`, `dispatchIncident`,
-    `addIncident`, `latestDispatch`, `missionHistory`, `missionParams`.
+    `addIncident`, `latestDispatch`, `missionHistory`, `missionParams`,
+    `updateMissionParams`, `activeMissionCount`.
   - `FleetContext` / `useFleet` — `assets`, `assignAsset`,
     `onlineAssetCount`.
+  - `AlertContext` / `useAlerts` — `alerts`, `resolveAlert`,
+    `activeAlertCount`.
   - `LogContext` / `useLogs` — `logs`, `appendLog`.
-- A single `TacticalProvider` composes all four providers so app-root
+- A single `TacticalProvider` composes all five providers so app-root
   usage (`App.tsx`) doesn't change.
 - Each screen/component currently calling `useTactical()` is updated to
   call only the specific hook(s) it actually reads, so a telemetry tick
@@ -165,3 +171,16 @@ split's tests build on the Jest setup from #3).
 - No app store signing/release configuration.
 - No full accessibility audit beyond primary-action labeling.
 - No screen-level integration/snapshot test suite.
+
+## Amendment (2026-09-20, later the same day)
+
+The "no real backend" scoping above was reversed: see
+`2026-09-20-resqmesh-backend-design.md`. Consequences for this spec:
+
+- Section 6 (local persistence via AsyncStorage) is superseded by the
+  SQLite mirror + sync engine in the forthcoming app data-layer spec.
+- Section 5 (state architecture split) is absorbed into that same
+  data-layer work — the new hooks (`useIncidents`, `useFleet`, …) are
+  built on the local database rather than on split React contexts.
+- Sections 1–4 (batch 1) proceed as planned and merge first; sections
+  7–8 (screen decomposition, accessibility) fold into the UI redesign.
