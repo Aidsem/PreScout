@@ -35,6 +35,7 @@ import {
   projectionFromBounds,
 } from "../map/projection";
 import { resolveDestination } from "../map/resolveDestination";
+import { placeScanPeople, resolvePeopleCount, revealedCount } from "../map/scanPlan";
 
 const issueCoordinates: Record<MarkerType, RouteCoordinate> = {
   drone: { latitude: 18.5324, longitude: 73.8464 },
@@ -115,6 +116,11 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
     useState<RouteCoordinate>();
   const incidentCoordinateRef = useRef<RouteCoordinate | undefined>(undefined);
   incidentCoordinateRef.current = incidentCoordinate;
+  const [activeIncidentId, setActiveIncidentId] = useState<string>();
+  const activeIncident = useMemo(
+    () => incidents.find((incident) => incident.id === activeIncidentId),
+    [incidents, activeIncidentId],
+  );
   const [focusCoordinate, setFocusCoordinate] = useState<RouteCoordinate>();
   const [projection, setProjection] = useState<MapProjection>(() =>
     projectionFromBounds(DEFAULT_BOUNDS),
@@ -166,45 +172,42 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
       { latitude: center.latitude - side, longitude: center.longitude - side },
       { latitude: center.latitude + side, longitude: center.longitude - side },
     ];
-    const people = [
-      {
-        id: "PERSON-A",
-        latitude: center.latitude + side * 0.35,
-        longitude: center.longitude - side * 0.2,
-      },
-      {
-        id: "PERSON-B",
-        latitude: center.latitude - side * 0.45,
-        longitude: center.longitude + side * 0.3,
-      },
-      {
-        id: "PERSON-C",
-        latitude: center.latitude + side * 0.1,
-        longitude: center.longitude + side * 0.65,
-      },
-    ];
+    const headcount = resolvePeopleCount(
+      activeIncident?.type ?? "sar",
+      activeIncident?.estimatedPeople,
+    );
+    const people = placeScanPeople(
+      center,
+      side,
+      headcount,
+      activeIncident?.id ?? `${center.latitude},${center.longitude}`,
+    );
     setScanStarted(true);
     setScanRoute(route);
     setPendingScanPeople(people);
     setDetectedPeople([]);
     appendLog(
       "AI",
-      `Drone scan started over a ${(side * 222).toFixed(0)}m square. Searching each sector for thermal signatures.`,
+      `Drone scan started over a ${(side * 222).toFixed(0)}m square. ${
+        activeIncident?.estimatedPeople
+          ? `Reporter estimated ${activeIncident.estimatedPeople} affected.`
+          : "Headcount unknown; sweeping for thermal signatures."
+      }`,
       "info",
     );
-  }, [appendLog, droneRoute, droneTravel.arrived, scanStarted, simulating]);
+  }, [
+    activeIncident,
+    appendLog,
+    droneRoute,
+    droneTravel.arrived,
+    scanStarted,
+    simulating,
+  ]);
 
   useEffect(() => {
     if (!scanRoute || pendingScanPeople.length === 0 || !simulating) return;
 
-    const revealCount =
-      scanTravel.progress >= 0.82
-        ? pendingScanPeople.length
-        : scanTravel.progress >= 0.55
-          ? Math.min(2, pendingScanPeople.length)
-          : scanTravel.progress >= 0.25
-            ? Math.min(1, pendingScanPeople.length)
-            : 0;
+    const revealCount = revealedCount(pendingScanPeople.length, scanTravel.progress);
 
     if (revealCount <= detectedPeople.length) return;
     const newlyDetected = pendingScanPeople.slice(
@@ -477,6 +480,7 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
     };
     setIncidentCoordinate(dispatchedCoordinate);
     incidentCoordinateRef.current = dispatchedCoordinate;
+    setActiveIncidentId(latestDispatch.incident.id);
     void computeRoutes(
       "person",
       {
@@ -523,6 +527,7 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
     );
     let dispatchOrigins: { drone?: RouteCoordinate; rover?: RouteCoordinate } =
       {};
+    let dispatchedIncidentId: string | undefined;
 
     if (!alreadyActive) {
       const dispatch = dispatchIncident({
@@ -540,6 +545,7 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
         status: "ACTIVE",
         description: "Response units dispatched from the live operations map.",
       });
+      dispatchedIncidentId = dispatch.incident.id;
       appendLog(
         "SYS",
         `${incidentTitle} created. ${dispatch.drone?.name ?? "No drone"} and ${dispatch.rover?.name ?? "no robot"} are moving from their assigned stations.`,
@@ -564,6 +570,7 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
     setSelectedMarker(targetId);
     setIncidentCoordinate(target);
     incidentCoordinateRef.current = target;
+    if (dispatchedIncidentId) setActiveIncidentId(dispatchedIncidentId);
     void computeRoutes(
       targetId,
       dispatchOrigins,
@@ -592,6 +599,7 @@ export const LiveMapScreen: React.FC<{ navigation: any; route?: any }> = ({
     setFocusCoordinate(undefined);
     setIncidentCoordinate(undefined);
     incidentCoordinateRef.current = undefined;
+    setActiveIncidentId(undefined);
     setDronePath(undefined);
     setRobotPath(undefined);
     setDroneRoute(undefined);

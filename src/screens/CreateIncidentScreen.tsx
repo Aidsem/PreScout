@@ -51,6 +51,7 @@ export const CreateIncidentScreen: React.FC<{ navigation: any }> = ({ navigation
   const [title, setTitle] = useState('');
   const [incidentType, setIncidentType] = useState<IncidentType>('sar');
   const [priority, setPriority] = useState<IncidentPriority>('critical');
+  const [estimatedPeople, setEstimatedPeople] = useState('');
   const [coordinates, setCoordinates] = useState('18.5204° N, 73.8567° E');
   const [locationName, setLocationName] = useState('Sector 7 Delta, Pune');
   const [locationMode, setLocationMode] = useState<'live' | 'search'>('live');
@@ -226,6 +227,11 @@ export const CreateIncidentScreen: React.FC<{ navigation: any }> = ({ navigation
 
     const latitude = Number(coordinateMatch[1]) * (coordinateMatch[2].toUpperCase() === 'S' ? -1 : 1);
     const longitude = Number(coordinateMatch[3]) * (coordinateMatch[4].toUpperCase() === 'W' ? -1 : 1);
+    const parsedPeople = estimatedPeople.trim() === '' ? undefined : Number(estimatedPeople);
+    if (parsedPeople !== undefined && (!Number.isInteger(parsedPeople) || parsedPeople < 1)) {
+      Alert.alert('Invalid headcount', 'Estimated people affected must be a whole number of 1 or more, or left blank if unknown.');
+      return;
+    }
     const finalTitle = title.trim() || `${incidentTypes.find((t) => t.key === incidentType)?.label} Operation`;
     const finalDesc = description.trim() || 'Tactical mission initialized. Asset allocation and perimeter surveillance active.';
 
@@ -233,6 +239,7 @@ export const CreateIncidentScreen: React.FC<{ navigation: any }> = ({ navigation
       title: finalTitle,
       type: incidentType,
       priority: priority,
+      estimatedPeople: parsedPeople,
       location: locationName,
       coordinates: { lat: latitude, lng: longitude },
       assignedAsset: 'Awaiting station dispatch',
@@ -351,6 +358,19 @@ export const CreateIncidentScreen: React.FC<{ navigation: any }> = ({ navigation
               );
             })}
           </View>
+        </View>
+
+        {/* Estimated People Affected */}
+        <View style={styles.formGroup}>
+          <Text style={styles.fieldLabel}>ESTIMATED PEOPLE AFFECTED</Text>
+          <TextInput
+            style={styles.textInputDark}
+            placeholder="Leave blank if unknown"
+            placeholderTextColor={Colors.outline}
+            keyboardType="number-pad"
+            value={estimatedPeople}
+            onChangeText={setEstimatedPeople}
+          />
         </View>
 
         {/* Location Acquisition */}

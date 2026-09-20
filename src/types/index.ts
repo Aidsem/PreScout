@@ -17,6 +17,7 @@ export interface Incident {
   timestamp: string;
   imageUrl?: string;
   description: string;
+  estimatedPeople?: number;
 }
 
 export type AssetType = 'drone' | 'rover';
