@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   Incident,
   FleetAsset,
@@ -11,6 +11,13 @@ import {
 } from '../types';
 import { RESPONSE_STATIONS, distanceBetween } from '../dispatch/stations';
 import { nextId } from '../utils/id';
+import {
+  parseSnapshot,
+  serializeSnapshot,
+  extractAssignments,
+  applyAssignments,
+} from '../storage/tacticalSnapshot';
+import { TacticalStorage, asyncStorageAdapter, STORAGE_KEY, BACKUP_KEY } from '../storage/tacticalStorage';
 
 export type AssignmentResult = { ok: true } | { ok: false; reason: string };
 
@@ -28,6 +35,8 @@ interface TacticalContextType {
   telemetry: TelemetryState;
   logs: SystemLog[];
   missionHistory: MissionHistoryItem[];
+  /** False until the persisted operational record has been read (or found empty/corrupt). */
+  hydrated: boolean;
   recordMission: (record: Omit<MissionHistoryItem, 'id'>) => MissionHistoryItem;
   missionParams: MissionParameters;
   addIncident: (incident: Omit<Incident, 'id' | 'timestamp'>) => void;
@@ -258,7 +267,19 @@ const initialHistory: MissionHistoryItem[] = [
 
 const TacticalContext = createContext<TacticalContextType | undefined>(undefined);
 
-export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface TacticalProviderProps {
+  children: React.ReactNode;
+  /** Injectable for tests and for the future SQLite mirror. */
+  storage?: TacticalStorage;
+  /** Debounce for writes; 0 in tests. */
+  persistDelayMs?: number;
+}
+
+export const TacticalProvider: React.FC<TacticalProviderProps> = ({
+  children,
+  storage = asyncStorageAdapter,
+  persistDelayMs = 500,
+}) => {
   const [incidents, setIncidents] = useState<Incident[]>(initialIncidents);
   const [assets, setAssets] = useState<FleetAsset[]>(initialAssets);
   const [alerts, setAlerts] = useState<DetectionAlert[]>(initialAlerts);
@@ -290,6 +311,84 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     geofenceEnabled: true,
     aiProfile: 'Person + Hazard',
   });
+
+  const [hydrated, setHydrated] = useState(false);
+  const storageRef = useRef(storage);
+  storageRef.current = storage;
+
+  // Hydrate once. An empty store leaves the demo baseline untouched; a corrupt
+  // store is parked under BACKUP_KEY so it is neither lost nor re-read.
+  useEffect(() => {
+    let cancelled = false;
+    const restoreWarning = (detail: string): SystemLog => ({
+      id: nextId('log'),
+      time: new Date().toISOString().substring(11, 16),
+      category: 'SYS',
+      message: `Saved operational record could not be restored (${detail}). Starting from baseline.`,
+      level: 'warning',
+    });
+
+    (async () => {
+      let raw: string | null = null;
+      try {
+        raw = await storageRef.current.getItem(STORAGE_KEY);
+      } catch (error) {
+        if (!cancelled) setLogs((prev) => [restoreWarning(error instanceof Error ? error.message : String(error)), ...prev]);
+        if (!cancelled) setHydrated(true);
+        return;
+      }
+      if (cancelled) return;
+
+      const result = parseSnapshot(raw);
+      if (result.kind === 'ok') {
+        setIncidents(result.snapshot.incidents);
+        setAlerts(result.snapshot.alerts);
+        setLogs(result.snapshot.logs);
+        setMissionHistory(result.snapshot.missionHistory);
+        setAssets((prev) => applyAssignments(prev, result.snapshot.assetAssignments));
+      } else if (result.kind === 'corrupt') {
+        try {
+          await storageRef.current.setItem(BACKUP_KEY, raw ?? '');
+        } catch {
+          // Backup is best-effort; the warning log below still records the loss.
+        }
+        if (!cancelled) setLogs((prev) => [restoreWarning(result.reason), ...prev]);
+      }
+      if (!cancelled) setHydrated(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Persist the durable record (debounced) once hydrated. Telemetry, mission
+  // params and dispatch previews are per-session and intentionally excluded.
+  // The run that merely observes hydration completing is skipped: writing the
+  // just-restored (or untouched baseline) state back out immediately would
+  // race the very next real change under a zero-delay debounce, since the
+  // first write's timer can fire before the second one is even scheduled.
+  const skipNextPersistRef = useRef(true);
+  useEffect(() => {
+    if (!hydrated) return;
+    if (skipNextPersistRef.current) {
+      skipNextPersistRef.current = false;
+      return;
+    }
+    const payload = serializeSnapshot({
+      incidents,
+      alerts,
+      logs,
+      missionHistory,
+      assetAssignments: extractAssignments(assets),
+    });
+    const timer = setTimeout(() => {
+      storageRef.current.setItem(STORAGE_KEY, payload).catch((error: unknown) => {
+        console.warn('Failed to persist tactical state.', error);
+      });
+    }, persistDelayMs);
+    return () => clearTimeout(timer);
+  }, [hydrated, incidents, alerts, logs, missionHistory, assets, persistDelayMs]);
 
   // Simulated live telemetry micro-pulsing for tactical realism
   useEffect(() => {
@@ -501,6 +600,7 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         telemetry,
         logs,
         missionHistory,
+        hydrated,
         recordMission,
         missionParams,
         addIncident,

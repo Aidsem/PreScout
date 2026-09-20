@@ -1,9 +1,10 @@
-import { renderHook, act } from '@testing-library/react-native';
+import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { TacticalProvider, useTactical } from '../TacticalContext';
 
 describe('recordMission', () => {
-  it('prepends a real operation to mission history and logs it', () => {
+  it('prepends a real operation to mission history and logs it', async () => {
     const { result } = renderHook(() => useTactical(), { wrapper: TacticalProvider });
+    await waitFor(() => expect(result.current.hydrated).toBe(true));
     const before = result.current.missionHistory.length;
 
     act(() => {

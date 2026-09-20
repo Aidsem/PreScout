@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react-native';
+import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { TacticalProvider, useTactical } from '../TacticalContext';
 
 function setup() {
@@ -6,8 +6,9 @@ function setup() {
 }
 
 describe('assignAsset', () => {
-  it('assigns an available asset to an active incident and updates both records', () => {
+  it('assigns an available asset to an active incident and updates both records', async () => {
     const { result } = setup();
+    await waitFor(() => expect(result.current.hydrated).toBe(true));
     const asset = result.current.assets.find((a) => a.status === 'AVAILABLE')!;
     const incident = result.current.incidents.find((i) => i.status !== 'RESOLVED')!;
 
@@ -25,8 +26,9 @@ describe('assignAsset', () => {
     expect(result.current.logs[0].message).toContain(asset.name);
   });
 
-  it('rejects an asset that is not available', () => {
+  it('rejects an asset that is not available', async () => {
     const { result } = setup();
+    await waitFor(() => expect(result.current.hydrated).toBe(true));
     const busy = result.current.assets.find((a) => a.status === 'ON MISSION')!;
     const incident = result.current.incidents[0];
 
@@ -41,8 +43,9 @@ describe('assignAsset', () => {
     );
   });
 
-  it('rejects an unknown or resolved incident instead of defaulting to inc-01', () => {
+  it('rejects an unknown or resolved incident instead of defaulting to inc-01', async () => {
     const { result } = setup();
+    await waitFor(() => expect(result.current.hydrated).toBe(true));
     const asset = result.current.assets.find((a) => a.status === 'AVAILABLE')!;
 
     let outcome: ReturnType<typeof result.current.assignAsset>;
@@ -57,8 +60,9 @@ describe('assignAsset', () => {
 });
 
 describe('unassignAsset', () => {
-  it('returns the asset to the pool and refreshes the incident label', () => {
+  it('returns the asset to the pool and refreshes the incident label', async () => {
     const { result } = setup();
+    await waitFor(() => expect(result.current.hydrated).toBe(true));
     const asset = result.current.assets.find((a) => a.status === 'AVAILABLE')!;
     const incident = result.current.incidents.find((i) => i.status !== 'RESOLVED')!;
 

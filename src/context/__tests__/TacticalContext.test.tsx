@@ -1,9 +1,10 @@
-import { renderHook, act } from '@testing-library/react-native';
+import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { TacticalProvider, useTactical } from '../TacticalContext';
 
 describe('dispatchIncident', () => {
-  it('assigns an available drone and rover and marks them ON MISSION', () => {
+  it('assigns an available drone and rover and marks them ON MISSION', async () => {
     const { result } = renderHook(() => useTactical(), { wrapper: TacticalProvider });
+    await waitFor(() => expect(result.current.hydrated).toBe(true));
 
     let dispatchResult: ReturnType<typeof result.current.dispatchIncident>;
     act(() => {
@@ -28,8 +29,9 @@ describe('dispatchIncident', () => {
     expect(assignedDrone?.assignedIncidentId).toBe(dispatchResult!.incident.id);
   });
 
-  it('adds the new incident to the front of the incidents list', () => {
+  it('adds the new incident to the front of the incidents list', async () => {
     const { result } = renderHook(() => useTactical(), { wrapper: TacticalProvider });
+    await waitFor(() => expect(result.current.hydrated).toBe(true));
     const initialCount = result.current.incidents.length;
 
     act(() => {
