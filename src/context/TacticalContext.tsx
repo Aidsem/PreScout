@@ -12,6 +12,15 @@ import {
 import { RESPONSE_STATIONS, distanceBetween } from '../dispatch/stations';
 import { nextId } from '../utils/id';
 
+export type AssignmentResult = { ok: true } | { ok: false; reason: string };
+
+function assignedLabel(assets: FleetAsset[], incidentId: string): string {
+  const names = assets
+    .filter((asset) => asset.assignedIncidentId === incidentId)
+    .map((asset) => asset.name);
+  return names.length ? `${names.join(' + ')} assigned` : 'No units assigned';
+}
+
 interface TacticalContextType {
   incidents: Incident[];
   assets: FleetAsset[];
@@ -23,7 +32,8 @@ interface TacticalContextType {
   addIncident: (incident: Omit<Incident, 'id' | 'timestamp'>) => void;
   dispatchIncident: (incident: Omit<Incident, 'id' | 'timestamp'>) => DispatchResult;
   latestDispatch?: DispatchResult;
-  assignAsset: (assetId: string, incidentId?: string) => void;
+  assignAsset: (assetId: string, incidentId: string) => AssignmentResult;
+  unassignAsset: (assetId: string) => AssignmentResult;
   toggleCameraMode: () => void;
   resolveAlert: (alertId: string) => void;
   appendLog: (category: SystemLog['category'], message: string, level?: SystemLog['level']) => void;
@@ -358,20 +368,59 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
 
-  const assignAsset = (assetId: string, incidentId?: string) => {
-    setAssets((prev) =>
-      prev.map((asset) => {
-        if (asset.id === assetId) {
-          const isAssigned = asset.status === 'ON MISSION';
-          return {
-            ...asset,
-            status: isAssigned ? 'AVAILABLE' : 'ON MISSION',
-            assignedIncidentId: isAssigned ? undefined : (incidentId || 'inc-01'),
-          };
-        }
-        return asset;
-      })
+  const assignAsset = (assetId: string, incidentId: string): AssignmentResult => {
+    const asset = assets.find((item) => item.id === assetId);
+    const incident = incidents.find((item) => item.id === incidentId);
+    if (!asset) return { ok: false, reason: 'Unknown asset.' };
+    if (!incident || incident.status === 'RESOLVED') {
+      return { ok: false, reason: 'Pick an active incident to assign this unit to.' };
+    }
+    if (asset.status !== 'AVAILABLE') {
+      return { ok: false, reason: `${asset.name} is ${asset.status.toLowerCase()} and cannot be assigned.` };
+    }
+
+    const nextAssets = assets.map((item) =>
+      item.id === assetId
+        ? { ...item, status: 'ON MISSION' as const, assignedIncidentId: incidentId, eta: 'Dispatching' }
+        : item
     );
+    setAssets(nextAssets);
+    setIncidents((prev) =>
+      prev.map((item) =>
+        item.id === incidentId
+          ? {
+              ...item,
+              assignedAsset: assignedLabel(nextAssets, incidentId),
+              status: item.status === 'ACTIVE' ? 'EN ROUTE' : item.status,
+            }
+          : item
+      )
+    );
+    appendLog('COMM', `${asset.name} assigned to ${incident.title} (${incident.id}) by operator.`, 'info');
+    return { ok: true };
+  };
+
+  const unassignAsset = (assetId: string): AssignmentResult => {
+    const asset = assets.find((item) => item.id === assetId);
+    if (!asset) return { ok: false, reason: 'Unknown asset.' };
+    if (asset.status !== 'ON MISSION') return { ok: false, reason: `${asset.name} is not on a mission.` };
+
+    const incidentId = asset.assignedIncidentId;
+    const nextAssets = assets.map((item) =>
+      item.id === assetId
+        ? { ...item, status: 'AVAILABLE' as const, assignedIncidentId: undefined, eta: 'Immediate' }
+        : item
+    );
+    setAssets(nextAssets);
+    if (incidentId) {
+      setIncidents((prev) =>
+        prev.map((item) =>
+          item.id === incidentId ? { ...item, assignedAsset: assignedLabel(nextAssets, incidentId) } : item
+        )
+      );
+    }
+    appendLog('COMM', `${asset.name} released from ${incidentId ?? 'its mission'} by operator.`, 'info');
+    return { ok: true };
   };
 
   const toggleCameraMode = () => {
@@ -449,6 +498,7 @@ export const TacticalProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         dispatchIncident,
         latestDispatch,
         assignAsset,
+        unassignAsset,
         toggleCameraMode,
         resolveAlert,
         appendLog,

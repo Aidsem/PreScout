@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -16,8 +17,30 @@ import { FleetAsset } from '../types';
 import type { MainTabScreenProps } from '../types/navigation';
 
 export const AssetSelectionScreen: React.FC<MainTabScreenProps<'AssetsTab'>> = ({ navigation }) => {
-  const { assets, assignAsset } = useTactical();
+  const { assets, incidents, assignAsset, unassignAsset } = useTactical();
   const [filter, setFilter] = useState<'all' | 'drones' | 'rovers' | 'available'>('all');
+  const activeIncidents = incidents.filter((incident) => incident.status !== 'RESOLVED');
+  const [targetIncidentId, setTargetIncidentId] = useState<string | undefined>(activeIncidents[0]?.id);
+  useEffect(() => {
+    if (!activeIncidents.some((incident) => incident.id === targetIncidentId)) {
+      setTargetIncidentId(activeIncidents[0]?.id);
+    }
+  }, [activeIncidents, targetIncidentId]);
+  const targetIncident = activeIncidents.find((incident) => incident.id === targetIncidentId);
+
+  const handleAssign = (asset: FleetAsset) => {
+    if (asset.status === 'ON MISSION') {
+      const result = unassignAsset(asset.id);
+      if (!result.ok) Alert.alert('Cannot release unit', result.reason);
+      return;
+    }
+    if (!targetIncident) {
+      Alert.alert('No active incident', 'Create or select an incident before assigning units.');
+      return;
+    }
+    const result = assignAsset(asset.id, targetIncident.id);
+    if (!result.ok) Alert.alert('Cannot assign unit', result.reason);
+  };
 
   const filteredAssets = assets.filter((asset) => {
     if (filter === 'drones') return asset.type === 'drone';
@@ -110,6 +133,31 @@ export const AssetSelectionScreen: React.FC<MainTabScreenProps<'AssetsTab'>> = (
           </TouchableOpacity>
         </ScrollView>
 
+        {/* Assignment Target */}
+        <View style={styles.targetSection}>
+          <Text style={styles.targetLabel}>ASSIGN TO INCIDENT</Text>
+          {activeIncidents.length === 0 ? (
+            <Text style={styles.targetEmpty}>No active incidents — create one to assign units.</Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+              {activeIncidents.map((incident) => {
+                const selected = incident.id === targetIncidentId;
+                return (
+                  <TouchableOpacity
+                    key={incident.id}
+                    style={[styles.filterChip, selected && styles.filterChipActive]}
+                    onPress={() => setTargetIncidentId(incident.id)}
+                  >
+                    <Text style={[styles.filterChipText, selected && styles.filterChipTextActive]}>
+                      {incident.title}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
+
         <View style={styles.inventorySummary}>
           <MaterialCommunityIcons name="map-marker-radius-outline" size={16} color={Colors.tertiary} />
           <Text style={styles.inventorySummaryText}>
@@ -186,7 +234,7 @@ export const AssetSelectionScreen: React.FC<MainTabScreenProps<'AssetsTab'>> = (
                       : styles.availableButton,
                     isCharging && styles.disabledButton,
                   ]}
-                  onPress={() => assignAsset(asset.id)}
+                  onPress={() => handleAssign(asset)}
                   disabled={isCharging}
                   activeOpacity={0.8}
                 >
@@ -202,7 +250,13 @@ export const AssetSelectionScreen: React.FC<MainTabScreenProps<'AssetsTab'>> = (
                     color={Colors.white}
                   />
                   <Text style={styles.assignButtonText}>
-                    {isAssigned ? 'UNASSIGN FROM MISSION' : isCharging ? 'CHARGING UNIT' : 'ASSIGN TO MISSION'}
+                    {isAssigned
+                      ? 'RELEASE FROM MISSION'
+                      : isCharging
+                      ? 'CHARGING UNIT'
+                      : targetIncident
+                      ? `ASSIGN TO ${targetIncident.title.toUpperCase()}`
+                      : 'NO ACTIVE INCIDENT'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -269,6 +323,20 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: Colors.primaryContainer,
+  },
+  targetSection: {
+    gap: 8,
+  },
+  targetLabel: {
+    fontSize: 10,
+    fontFamily: 'Courier',
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: Colors.onSurfaceVariant,
+  },
+  targetEmpty: {
+    fontSize: 11,
+    color: Colors.outline,
   },
   inventorySummary: {
     flexDirection: 'row',
