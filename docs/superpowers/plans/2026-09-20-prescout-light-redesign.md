@@ -728,3 +728,150 @@ it('starts idle, enters simulating on START, and completes on BOTH_ARRIVED', () 
 2. `npx expo export --platform web` succeeds; `npx expo start --web` shows every screen on the light system with animations; Android via Expo Go: Splash Lottie plays, onboarding pages swipe, cards lift on press, map HUD sheet drags, offline banner appears in airplane mode.
 3. Persisted state (from audit Task 3) still restores after force-quit; Splash waits on hydration.
 4. No "ResQMesh" string remains outside the audit report and historical docs.
+
+---
+
+## Amendment 1 tasks (insert after Task 2; see spec Amendment 1)
+
+### Task 2A: Dialog primitive and replace every `Alert.alert`
+
+**Files:** Create `src/ui/Dialog.tsx` (component + `DialogProvider` + `useDialog`), `src/ui/__tests__/Dialog.test.tsx`; modify `src/ui/index.ts`, `App.tsx` (wrap `<AppNavigator />` in `<DialogProvider>` inside `TacticalProvider`), and every screen in `src/screens` that calls `Alert.alert` (17 call sites: MissionHistory, AssetSelection ×3, CreateIncident ×7, DetectionDetails ×3, plus any others `grep -rn "Alert.alert(" src` finds).
+
+**Interfaces (produced):**
+```ts
+export type DialogTone = 'info' | 'success' | 'warning' | 'danger';
+export interface DialogAction { label: string; onPress?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }
+export interface DialogOptions { title: string; message?: string; tone?: DialogTone; actions?: DialogAction[]; mode?: 'dialog' | 'toast'; icon?: glyph }
+export function useDialog(): { show: (options: DialogOptions) => void; toast: (title: string, message?: string, tone?: DialogTone) => void; dismiss: () => void }
+export const DialogProvider: React.FC<{ children: React.ReactNode }>
+```
+
+- [ ] **Step 1: Failing test** `src/ui/__tests__/Dialog.test.tsx`:
+```tsx
+import React from 'react';
+import { Text, Pressable } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
+import { DialogProvider, useDialog } from '../Dialog';
+
+function Trigger() {
+  const { show, toast } = useDialog();
+  return (
+    <>
+      <Pressable testID="open" onPress={() => show({ title: 'Incident dispatched', message: 'DRONE-01 en route', tone: 'success', actions: [{ label: 'View map', onPress: jest.fn() }, { label: 'Close', variant: 'ghost' }] })}><Text>open</Text></Pressable>
+      <Pressable testID="toast" onPress={() => toast('Saved', 'Evidence logged')}><Text>toast</Text></Pressable>
+    </>
+  );
+}
+
+describe('Dialog', () => {
+  it('shows title, message and actions, and dismisses on an action press', () => {
+    render(<DialogProvider><Trigger /></DialogProvider>);
+    fireEvent.press(screen.getByTestId('open'));
+    expect(screen.getByText('Incident dispatched')).toBeTruthy();
+    expect(screen.getByText('DRONE-01 en route')).toBeTruthy();
+    fireEvent.press(screen.getByText('Close'));
+    expect(screen.queryByText('Incident dispatched')).toBeNull();
+  });
+  it('auto-dismisses a toast', () => {
+    jest.useFakeTimers();
+    render(<DialogProvider><Trigger /></DialogProvider>);
+    fireEvent.press(screen.getByTestId('toast'));
+    expect(screen.getByText('Saved')).toBeTruthy();
+    act(() => { jest.advanceTimersByTime(2600); });
+    expect(screen.queryByText('Saved')).toBeNull();
+    jest.useRealTimers();
+  });
+  it('throws when used outside the provider', () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => render(<Trigger />)).toThrow(/DialogProvider/);
+  });
+});
+```
+- [ ] **Step 2: Implement** — `DialogProvider` holds `current: DialogOptions | null`; renders children plus, when set, an `RN Modal transparent statusBarTranslucent` with a scrim (`rgba(21,26,30,0.45)`), an `Animated.View entering={ZoomIn.duration(Durations.base)} exiting={FadeOut}` `Card` (max width 360, centered): 44px icon disc in `tone` container colour (`info`→`infoContainer`/`info`, `success`, `warning`, `danger`), icon default per tone (`information`, `check-circle`, `alert`, `alert-octagon`), title (`Fonts.sans`, `FontSize.lg`, 700), message (`FontSize.md`, `Colors.inkMuted`), then `actions` as `Button fullWidth` (default one `{ label: 'OK' }`; first action `primary` unless specified). `mode: 'toast'` renders instead a bottom-anchored `Card` (`SlideInDown`/`SlideOutDown`) with icon + title + message, no actions, cleared by a 2500 ms timeout (cleared on unmount/dismiss). Every action press calls its `onPress` then `dismiss()`. `useDialog` throws `'useDialog must be used within a DialogProvider'` outside the provider.
+- [ ] **Step 3: Replace call sites** — mapping: errors/permissions (`Cannot assign unit`, `Cannot release unit`, `No active incident`, `Location unavailable`, `Camera permission required`, `Photo access required`, `Invalid headcount`, `Export unavailable`) → `show({ tone: 'danger' | 'warning', … })` with the same title/message and same button labels/handlers; confirmations (`Location acquired`, `Saved`, `Shared`, `Alert Resolved`) → `toast(title, message, 'success')`; the CreateIncident dispatch summary → `show({ title: 'Incident dispatched', tone: 'success', message: <existing summary text>, actions: [{ label: 'Open live map', onPress: <existing navigation> }, { label: 'Done', variant: 'ghost', onPress: <existing goBack> }] })`. Remove the now-unused `Alert` imports. `grep -rn "Alert.alert(" src` must return 0.
+- [ ] **Step 4: Gates + commit** `feat(ui): in-app Dialog/Toast primitive replacing native alerts`.
+
+### Task 2B: Boustrophedon drone sweep with proximity-based detection
+
+**Files:** Modify `src/map/scanPlan.ts`, `src/map/__tests__/scanPlan.test.ts`, `src/screens/LiveMapScreen.tsx` (scan route construction ~lines 196-222 and the reveal effect ~lines 241-265).
+
+**Interfaces (produced):**
+```ts
+export function buildSweepRoute(center: RouteCoordinate, side: number, lanes?: number /* default 6 */): RouteCoordinate[];
+// Lawnmower path inside the square [center±side]: enters at the NW corner, runs east–west lanes spaced (2*side)/(lanes-1) apart, alternating direction, exits at the last lane's end.
+export function scanOutline(center: RouteCoordinate, side: number): RouteCoordinate[]; // the 5-point closed square used for the grid overlay
+export function detectAlongRoute(position: RouteCoordinate, people: ScanPerson[], radiusDeg: number, already: ReadonlySet<string>): ScanPerson[];
+// people within radiusDeg (euclidean in degrees) of position and not in `already`
+export const DETECTION_RADIUS_DEG = 0.00045; // ≈ 50 m
+```
+`revealedCount` and its constants are deleted.
+
+- [ ] **Step 1: Failing tests** (replace the `revealedCount` tests in `scanPlan.test.ts`):
+```ts
+import { buildSweepRoute, scanOutline, detectAlongRoute, DETECTION_RADIUS_DEG, placeScanPeople } from '../scanPlan';
+
+const center = { latitude: 18.52, longitude: 73.85 };
+const side = 0.003;
+
+describe('buildSweepRoute', () => {
+  it('produces 2 points per lane, alternating direction, all inside the square', () => {
+    const route = buildSweepRoute(center, side, 6);
+    expect(route).toHaveLength(12);
+    route.forEach((p) => {
+      expect(Math.abs(p.latitude - center.latitude)).toBeLessThanOrEqual(side + 1e-12);
+      expect(Math.abs(p.longitude - center.longitude)).toBeLessThanOrEqual(side + 1e-12);
+    });
+    expect(route[0].longitude).toBeLessThan(route[1].longitude);   // lane 1 west→east
+    expect(route[2].longitude).toBeGreaterThan(route[3].longitude); // lane 2 east→west
+    expect(route[0].latitude).toBe(center.latitude + side);         // starts at the north edge
+    expect(route[11].latitude).toBe(center.latitude - side);        // ends at the south edge
+  });
+  it('spaces lanes evenly', () => {
+    const route = buildSweepRoute(center, side, 4);
+    const lats = [route[0], route[2], route[4], route[6]].map((p) => p.latitude);
+    expect(lats[0] - lats[1]).toBeCloseTo(lats[1] - lats[2], 10);
+  });
+});
+
+describe('scanOutline', () => {
+  it('is a closed 5-point square', () => {
+    const o = scanOutline(center, side);
+    expect(o).toHaveLength(5);
+    expect(o[0]).toEqual(o[4]);
+  });
+});
+
+describe('detectAlongRoute', () => {
+  const people = [
+    { id: 'PERSON-1', latitude: center.latitude, longitude: center.longitude },
+    { id: 'PERSON-2', latitude: center.latitude + 0.002, longitude: center.longitude + 0.002 },
+  ];
+  it('detects only people within the radius of the current position', () => {
+    const hits = detectAlongRoute(center, people, DETECTION_RADIUS_DEG, new Set());
+    expect(hits.map((p) => p.id)).toEqual(['PERSON-1']);
+  });
+  it('never re-detects someone already found', () => {
+    expect(detectAlongRoute(center, people, DETECTION_RADIUS_DEG, new Set(['PERSON-1']))).toEqual([]);
+  });
+  it('a full sweep passes within radius of every placed person', () => {
+    const route = buildSweepRoute(center, side, 8);
+    const placed = placeScanPeople(center, side, 8, 'seed');
+    const found = new Set<string>();
+    // sample each lane segment at 40 points
+    for (let i = 0; i < route.length - 1; i++) {
+      for (let t = 0; t <= 40; t++) {
+        const pos = {
+          latitude: route[i].latitude + (route[i + 1].latitude - route[i].latitude) * (t / 40),
+          longitude: route[i].longitude + (route[i + 1].longitude - route[i].longitude) * (t / 40),
+        };
+        detectAlongRoute(pos, placed, DETECTION_RADIUS_DEG, found).forEach((p) => found.add(p.id));
+      }
+    }
+    expect(found.size).toBe(placed.length);
+  });
+});
+```
+The last test pins the lane count/radius relationship: with `side=0.003` and 8 lanes, spacing is 0.000857° and half-spacing 0.00043° < `DETECTION_RADIUS_DEG` 0.00045°, so every interior point is within reach of some lane. If it fails, raise the default lanes, not the radius.
+- [ ] **Step 2: Implement** `scanPlan.ts` per the interface (pure, no React). Default `lanes = 8`.
+- [ ] **Step 3: Wire LiveMapScreen** — replace the perimeter `route` array with `const outline = scanOutline(center, side); const sweep = buildSweepRoute(center, side);` store `scanRoute = sweep` for travel and pass `scanOutline={outline}` to `OpenRouteMap` for the polygon overlay (add the optional `scanOutline?: RouteCoordinate[]` prop to `OpenRouteMap.d.ts`, `.native.tsx` (draw the polygon from `scanOutline`, the polyline of `scanRoute` as a thin dashed `MapColors.droneRoute` line), and `.web.tsx`). Replace the reveal effect: on every `scanTravel.position` change, `const hits = detectAlongRoute(scanTravel.position, pendingScanPeople, DETECTION_RADIUS_DEG, detectedIds)`; append hits to `detectedPeople` and log each as today. `usePathTravel`/`useRouteTravel` already expose the interpolated `position`; if the scan hook only exposes `progress`, derive position by linear interpolation along `scanRoute` at `progress` (add a pure `positionAlong(route, progress)` to `src/utils/pathMotion.ts` with a unit test).
+- [ ] **Step 4: Gates + web export + commit** `feat(map): lawnmower drone sweep with proximity-based detections`.

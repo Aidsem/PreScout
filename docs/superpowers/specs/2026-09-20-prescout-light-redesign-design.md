@@ -186,3 +186,25 @@ accent active tint.
 - Dark mode; new pages; backend; shared-element transitions (experimental in
   Reanimated 4 with native-stack); custom font loading (System + Courier
   only); changing any context/business logic.
+
+## Amendment 1 (2026-09-20, during execution)
+
+User feedback while running the light build added two requirements:
+
+- **In-app dialogs.** Native `Alert.alert` popups ("Incident dispatched",
+  "Location acquired", assignment errors, …) look foreign next to the new UI.
+  A `Dialog` primitive (card-style modal on a scrim: icon disc by tone,
+  sans title, body, up to two `Button`s) is provided through a
+  `DialogProvider` + `useDialog()` hook whose `show({ title, message, tone,
+  actions })` mirrors the `Alert.alert` signature. Every `Alert.alert` in
+  `src/screens` is replaced. Short confirmations ("Saved", "Shared",
+  "Location acquired") use the same primitive in `toast` mode (auto-dismiss
+  2.5 s, bottom slide-in). `DialogProvider` is the one UI context allowed in
+  `src/ui`.
+- **Realistic drone sweep.** The drone must fly a boustrophedon (lawnmower)
+  sweep *inside* the scan square, not around its perimeter, and a person is
+  detected only when the drone's current position passes within a detection
+  radius of that person — not on a fixed fraction of elapsed progress.
+  `src/map/scanPlan.ts` gains `buildSweepRoute(center, side, lanes)` and
+  `detectAlongRoute(position, people, radiusDeg)`; `revealedCount` is
+  removed. The scan polygon outline still renders as the search-grid overlay.
