@@ -45,3 +45,6 @@ yarn-error.*
 .vscode/
 .claude/*.local.json
 
+
+# agent scratch
+.superpowers/
