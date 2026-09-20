@@ -8,6 +8,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { TacticalProvider } from './src/context/TacticalContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { Colors } from './src/theme/colors';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 
 export default function App() {
   useEffect(() => {
@@ -34,33 +35,35 @@ export default function App() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-      <TacticalProvider>
-        <NavigationContainer
-          theme={{
-            dark: true,
-            colors: {
-              primary: Colors.tertiary,
-              background: Colors.background,
-              card: Colors.surfaceContainer,
-              text: Colors.white,
-              border: Colors.outlineVariant,
-              notification: Colors.error,
-            },
-            fonts: {
-              regular: { fontFamily: 'System', fontWeight: '400' },
-              medium: { fontFamily: 'System', fontWeight: '500' },
-              bold: { fontFamily: 'System', fontWeight: '700' },
-              heavy: { fontFamily: 'System', fontWeight: '900' },
-            },
-          }}
-        >
-          <StatusBar style="light" />
-          <AppNavigator />
-        </NavigationContainer>
-      </TacticalProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+        <TacticalProvider>
+          <NavigationContainer
+            theme={{
+              dark: true,
+              colors: {
+                primary: Colors.tertiary,
+                background: Colors.background,
+                card: Colors.surfaceContainer,
+                text: Colors.white,
+                border: Colors.outlineVariant,
+                notification: Colors.error,
+              },
+              fonts: {
+                regular: { fontFamily: 'System', fontWeight: '400' },
+                medium: { fontFamily: 'System', fontWeight: '500' },
+                bold: { fontFamily: 'System', fontWeight: '700' },
+                heavy: { fontFamily: 'System', fontWeight: '900' },
+              },
+            }}
+          >
+            <StatusBar style="light" />
+            <AppNavigator />
+          </NavigationContainer>
+        </TacticalProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
